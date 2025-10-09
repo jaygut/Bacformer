@@ -2,6 +2,8 @@ import logging
 import re
 from collections.abc import Callable
 from typing import Any, Literal
+import hashlib
+from pathlib import Path
 
 from datasets import Dataset
 from transformers import AutoModel, AutoTokenizer
@@ -97,6 +99,63 @@ def load_plm(
         tokenizer = AutoTokenizer.from_pretrained(model_path, do_lower_case=False)
 
     return model, tokenizer
+
+
+def _flatten_sequences(seqs: list[str] | list[list[str]]) -> list[str]:
+    """Flatten a nested list of sequences into a single list of strings."""
+    if not seqs:
+        return []
+    if isinstance(seqs[0], str):
+        return list(seqs)  # already flat
+    # nested
+    flat: list[str] = []
+    for contig in seqs:  # type: ignore[assignment]
+        flat.extend(contig)
+    return flat
+
+
+def _make_cache_key(
+    protein_sequences: list[str] | list[list[str]],
+    model_id: str,
+    model_type: str,
+    max_prot_seq_len: int,
+    genome_pooling_method: str | None,
+) -> str:
+    """Create a stable cache key for a genome's protein-level embeddings.
+
+    The key incorporates model identity and relevant parameters, as well as a hash of the input sequences.
+    """
+    flat = _flatten_sequences(protein_sequences)
+    # Normalize sequences for hashing
+    norm = [s.strip().upper() for s in flat]
+    joined = "||".join(norm)
+    seq_hash = hashlib.sha1(joined.encode("utf-8")).hexdigest()
+    # Compose key parts; avoid overly long filenames
+    safe_model = model_id.replace("/", "-")
+    pool_tag = genome_pooling_method if genome_pooling_method is not None else "none"
+    key = f"{safe_model}_{model_type}_len{max_prot_seq_len}_pool-{pool_tag}_sha1-{seq_hash}"
+    return key
+
+
+def _cache_load(cache_dir: str | Path, key: str):
+    """Load cached embeddings if present; return None on miss."""
+    path = Path(cache_dir) / f"prot_emb_{key}.pt"
+    if path.exists():
+        try:
+            return torch.load(path, map_location="cpu")
+        except Exception as e:  # pragma: no cover - best-effort cache
+            logging.warning(f"Failed to load cache {path}: {e}")
+    return None
+
+
+def _cache_save(cache_dir: str | Path, key: str, obj) -> None:
+    path = Path(cache_dir)
+    path.mkdir(parents=True, exist_ok=True)
+    file = path / f"prot_emb_{key}.pt"
+    try:
+        torch.save(obj, file)
+    except Exception as e:  # pragma: no cover - best-effort cache
+        logging.warning(f"Failed to save cache {file}: {e}")
 
 
 def protein_embeddings_to_inputs(
@@ -426,20 +485,54 @@ def add_protein_embeddings(
     batch_size: int = 64,
     max_prot_seq_len: int = 1024,
     genome_pooling_method: Literal["mean", "max"] = None,
+    *,
+    # Optional caching controls (protein-level embeddings only)
+    cache_dir: str | None = None,
+    cache_overwrite: bool = False,
+    model_id: str | None = None,
 ):
     """Helper function to add protein embeddings to a row."""
-    return {
-        output_col: compute_genome_protein_embeddings(
-            model=model,
-            tokenizer=tokenizer,
-            protein_sequences=row[prot_seq_col],
-            contig_ids=row.get("contig_name", None),
-            model_type=model_type,
-            batch_size=batch_size,
-            max_prot_seq_len=max_prot_seq_len,
-            genome_pooling_method=genome_pooling_method,
+    sequences = row[prot_seq_col]
+    # Try cache only for the pLM stage (not Bacformer stage). Bacformer call happens separately.
+    if cache_dir is not None:
+        if model_id is None:
+            # best-effort string for model; .__class__.__name__ fallback
+            model_id = getattr(getattr(model, "name_or_path", None), "__str__", lambda: None)() or getattr(
+                model, "name_or_path", None
+            ) or model.__class__.__name__
+        key = _make_cache_key(
+            protein_sequences=sequences,
+            model_id=str(model_id),
+            model_type=str(model_type),
+            max_prot_seq_len=int(max_prot_seq_len),
+            genome_pooling_method=str(genome_pooling_method) if genome_pooling_method is not None else None,
         )
-    }
+        if not cache_overwrite:
+            cached = _cache_load(cache_dir, key)
+            if cached is not None:
+                logging.info(f"Protein embeddings cache hit: {key}")
+                return {output_col: cached}
+
+    # Cache miss or overwrite: compute
+    value = compute_genome_protein_embeddings(
+        model=model,
+        tokenizer=tokenizer,
+        protein_sequences=sequences,
+        contig_ids=row.get("contig_name", None),
+        model_type=model_type,
+        batch_size=batch_size,
+        max_prot_seq_len=max_prot_seq_len,
+        genome_pooling_method=genome_pooling_method,
+    )
+
+    if cache_dir is not None:
+        try:
+            _cache_save(cache_dir, key, value)
+            logging.info(f"Protein embeddings cache saved: {key}")
+        except Exception:
+            pass
+
+    return {output_col: value}
 
 
 def add_bacformer_embeddings(
@@ -494,6 +587,8 @@ def embed_dataset_col(
     genome_pooling_method: Literal["mean", "max"] = None,
     max_n_proteins: int = 9000,
     max_n_contigs: int = 1000,
+    cache_dir: str | None = None,
+    cache_overwrite: bool = False,
 ):
     """Run script to embed protein sequences with various models.
 
@@ -542,6 +637,9 @@ def embed_dataset_col(
             batch_size=batch_size,
             max_prot_seq_len=max_prot_seq_len,
             genome_pooling_method=genome_pooling_method if bacformer_model is None else None,
+            cache_dir=cache_dir,
+            cache_overwrite=cache_overwrite,
+            model_id=model_path,
         ),
         batched=False,
         remove_columns=[prot_col],
