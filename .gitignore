@@ -28,3 +28,6 @@ __pycache__/
 
 # Jupyter artefacts
 tutorials/.ipynb_checkpoints/
+
+# AI documentation
+ai_docs/
