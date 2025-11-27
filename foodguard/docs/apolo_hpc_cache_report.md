@@ -1,9 +1,15 @@
 # Apolo HPC ESM-2 Cache Experiments (Nov 2025)
 
-## Goal
-Execute the P0 ESM-2 cache preflight on Apolo to confirm end-to-end viability and identify blockers for full cache population.
+## Purpose and Scope
+This report documents the P0 ESM-2 cache preflight on Apolo, executed to:
+- Validate that the FoodGuard ESM-2 embedding pipeline runs end-to-end in the Apolo environment.
+- Identify hardware/software blockers to full cache population (21,657 genomes).
+- Capture reproducible commands, environment pinning, and observed artifacts for auditability.
+- Provide a go/no-go recommendation and migration plan to suitable GPU resources.
 
-## Hardware and Cluster Context
+The preflight is part of the broader P0 “ESM-2 Cache Infrastructure — Warm, Integrate, Validate” plan: pre-populate embeddings, wire the cache into the pipeline, benchmark hit-rate/latency, and unlock fine-tuning. Apolo was evaluated as a potential execution site.
+
+## Hardware and Cluster Context (Apolo)
 - GPU partition: `accel` only (Tesla K80, 11 GB), driver 470.42.01 (CUDA 11.4).
 - No V100/A100/T4 partitions visible (`sinfo` shows only `accel` for GPUs; AVAIL_FEATURES is null).
 - Kepler K80 + driver 470 cannot run PyTorch ≥2.x CUDA wheels that Bacformer requires.
@@ -18,7 +24,7 @@ Execute the P0 ESM-2 cache preflight on Apolo to confirm end-to-end viability an
   - `torch==2.9.1+cu128` (initial) → driver too old, CUDA unavailable.
   - `torch==1.12.1+cu113` (driver-compatible) → lacks `scaled_dot_product_attention`; Bacformer import fails.
 
-## Actions and Commands
+## Actions and Commands (Chronological)
 1) Verified GPU partition: `sinfo -o "%P %G %N %f %T"` → only `accel` (K80).
 2) CPU-only smoke (code sanity check; very slow):
    ```bash
@@ -75,11 +81,18 @@ Execute the P0 ESM-2 cache preflight on Apolo to confirm end-to-end viability an
 - Apolo K80 nodes cannot run Bacformer with GPU acceleration: torch ≥2.x CUDA wheels drop Kepler support; older torch builds miss required ops.
 - CPU-only execution works for a single-genome smoke but is far too slow for population-scale caching.
 
-## Conclusion
-- Full ESM-2 cache population cannot be performed on Apolo’s K80/470 stack.
-- Apolo is usable only for CPU sanity checks (small limits) to validate code paths.
+## Assessment and Decision
+- **Go/No-Go:** No-go for production cache population on Apolo GPUs. Hardware/driver are incompatible with required torch 2.x CUDA builds and Bacformer ops.
+- **Viable use:** Limited to CPU sanity checks (single-genome smoke) to validate code paths; not viable for throughput.
 
-## Next Steps (for production cache)
-1) Acquire access to newer GPUs (V100/T4/A100) with driver ≥525 on another partition/cluster/cloud.
-2) On that hardware: install a matching torch 2.x CUDA wheel (cu118/cu121), rerun the 2-genome preflight, then launch sharded cache population.
-3) Keep `max-prot-seq-len=1024` and consistent `cache_dir` to preserve cache key compatibility; run `generate_cache_progress.py` for tracking.
+## Migration Plan for Production Cache
+1) **Target hardware:** Access V100/T4/A100 GPUs with driver ≥525 (cluster or cloud).
+2) **Environment on new hardware:** Python 3.10; `pip install torch==2.2.x` (cu118/cu121 matching driver); `pip install -e ".[dev]"`.
+3) **Preflight:** Repeat 2-genome preflight with `--batch-size 8`, `--max-prot-seq-len 1024`, verify cache write + timing + cache hit on rerun.
+4) **Sharded run:** Use `scripts/submit_cache_population.sh` with consistent `cache_dir`, `max-prot-seq-len=1024`, shard across available GPUs; monitor with `generate_cache_progress.py`.
+5) **Validation:** Run `scripts/pilot_benchmark_pipeline.py --limit 50 --report ...` to confirm hit-rate/latency; run integrity spot-checks on random cache files; maintain progress JSON.
+
+## Due Diligence Notes
+- Recorded all dependency pins and failure modes (torch/driver mismatch, Kepler support drop, NumPy ABI warning).
+- Ensured cache key compatibility guidance (max sequence length, model ID, single cache_dir) is retained for future runs.
+- Captured the single CPU artifact for audit (contigs, protein count, embedding dim).
