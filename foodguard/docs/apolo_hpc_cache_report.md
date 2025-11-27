@@ -45,24 +45,31 @@ Execute the P0 ESM-2 cache preflight on Apolo to confirm end-to-end viability an
      ls -lh $PWD/.cache/esm2_cpu/prot_emb_*.pt
      ```
    - Load and summarize shape:
-   ```bash
-   python - <<'PY'
-   import torch, glob
-   paths = glob.glob(".cache/esm2_cpu/prot_emb_*.pt")
-   print("files:", len(paths))
-   if paths:
-       obj = torch.load(paths[0], map_location="cpu")
-       if isinstance(obj, list):
-           print("example contig count:", len(obj))
-            if obj and obj[0]:
-                print("example contig[0] protein count:", len(obj[0]))
-                print("example embedding dim:", len(obj[0][0]))
-            else:
-                print("empty contig or embedding?")
-        else:
-            print("unexpected type:", type(obj))
-   PY
-   ```
+     ```bash
+     python - <<'PY'
+     import torch, glob
+     paths = glob.glob(".cache/esm2_cpu/prot_emb_*.pt")
+     print("files:", len(paths))
+     if paths:
+         obj = torch.load(paths[0], map_location="cpu")
+         if isinstance(obj, list):
+             print("example contig count:", len(obj))
+             if obj and obj[0]:
+                 print("example contig[0] protein count:", len(obj[0]))
+                 print("example embedding dim:", len(obj[0][0]))
+             else:
+                 print("empty contig or embedding?")
+         else:
+             print("unexpected type:", type(obj))
+     PY
+     ```
+   - Observed (Nov 26, 2025, Apolo CPU run):
+     ```
+     files: 1
+     example contig count: 2
+     example contig[0] protein count: 4511
+     example embedding dim: 480
+     ```
 
 ## Findings
 - Apolo K80 nodes cannot run Bacformer with GPU acceleration: torch ≥2.x CUDA wheels drop Kepler support; older torch builds miss required ops.
