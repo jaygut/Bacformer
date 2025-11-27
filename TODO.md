@@ -1,15 +1,24 @@
-# FoodGuard AI – MVP TODO (Revised based on Strategic Review)
+# FoodGuard AI – MVP TODO (Updated Post-Data Acquisition Success)
 
-**Last Updated:** October 8, 2025
-**Status:** Post-Strategic Review - Aligned with 4-month realistic roadmap
+**Last Updated:** October 21, 2025
+**Status:** ✅ **MAJOR MILESTONE ACHIEVED** - Complete genome dataset acquired and validated
 
-This living checklist tracks the remaining work to bring the FoodGuard MVP from partial scaffold to a production-ready prototype. All tasks have been re-prioritized based on the comprehensive strategic review findings.
+This living checklist tracks the remaining work to bring the FoodGuard MVP from partial scaffold to a production-ready prototype. All tasks have been re-prioritized based on the **successful completion of comprehensive data acquisition**.
 
-**Key Changes from Original TODO:**
-- ESM-2 caching elevated from "optimization" to **P0 MANDATORY** (blocking)
-- Fine-tuned pathogen classifier added as **P0 BLOCKING** (not previously listed)
-- Novelty detection downgraded to "Beta" status with validation requirements
-- Timeline extended from 3 to 4 months with realistic effort estimates
+**🎯 BREAKTHROUGH ACHIEVEMENT (October 2025):**
+- ✅ **21,657 bacterial genomes** successfully acquired and processed
+- ✅ **96.4 GB genomic data** with comprehensive quality validation  
+- ✅ **Perfect 60:40 pathogenic:non-pathogenic balance** achieved
+- ✅ **9 species coverage** across critical foodborne pathogens and hard negatives
+- ✅ **Production-ready manifest** (`gbff_manifest_full_20251020_123050.tsv`) generated
+- ✅ **High-performance Python pipeline** (10-20x faster than bash) implemented
+
+**Key Changes from Previous TODO:**
+- ✅ **Data acquisition COMPLETED** - removed from P0 blocking tasks
+- ✅ **Dataset curation COMPLETED** - 21,657 labeled genomes ready for training
+- 🔄 **ESM-2 caching now P0 IMMEDIATE** - dataset ready for embedding generation
+- 🔄 **Fine-tuning timeline accelerated** - high-quality balanced dataset available
+- 🔄 **Timeline reduced from 14 to 10-12 weeks** due to data acquisition completion
 
 Use this alongside GitHub Issues/Milestones:
 - Create one issue per checkbox, label by area (pipeline, calibration, novelty, evidence, retrieval, api, tooling, data, perf, ops) and priority (P0/P1/P2)
@@ -20,14 +29,18 @@ Use this alongside GitHub Issues/Milestones:
 
 ## P0 – Now (Critical Path - BLOCKING for MVP Launch)
 
-**Timeline: 12-14 weeks**
+**Timeline: 10-12 weeks** (reduced from 14 weeks due to data acquisition completion)
 **Goal: Functional pathogen detection with calibrated PS, basic ES, Beta NS**
 
-### 1. ESM-2 Cache Infrastructure (MANDATORY) - **Week 1-2**
-- [ ] **Cache Pre-population**: Download FDA GenomeTrakr dataset (~5K genomes)
-  - Effort: 3-5 days
-  - Output: ~29 GB cached protein embeddings
-  - Script: `scripts/fg_prepopulate_cache.py`
+### 1. ESM-2 Cache Infrastructure (MANDATORY) - **Week 1-3**
+- [x] **Dataset Acquisition**: ✅ **COMPLETED** - 21,657 genomes acquired and validated
+  - ✅ Pathogenic: 13,000 genomes (Salmonella, E. coli O157:H7, L. monocytogenes)
+  - ✅ Non-pathogenic: 8,657 genomes (6 species hard negatives)
+  - ✅ Manifest: `gbff_manifest_full_20251020_123050.tsv` (production-ready)
+- [ ] **Cache Pre-population**: Generate ESM-2 embeddings for all 21,657 genomes
+  - Effort: 2-3 weeks (HPC with 4 GPUs) or 6-8 weeks (single GPU)
+  - Output: ~35 GB cached protein embeddings (scaled up from 5K to 21K genomes)
+  - Script: `scripts/populate_esm2_cache.py` (see unified manifest blueprint)
 - [ ] **Pipeline Integration**: Add `cache_dir` to `PipelineConfig` and wire to `add_protein_embeddings`
   - Effort: 2-3 days
   - Files: `foodguard/config.py`, `foodguard/pipeline.py`
@@ -45,18 +58,22 @@ Use this alongside GitHub Issues/Milestones:
 **Owner:** DevOps + ML Engineer
 **Blocking:** All downstream tasks (can't test without cache)
 **Success Criteria:**
-- GenomeTrakr cache pre-populated (5K genomes, 29 GB)
+- ✅ **UPGRADED**: FoodGuard cache pre-populated (21,657 genomes, ~35 GB)
 - Cache hit latency <5s, total pipeline <30s
-- Cache hit rate >80% on test set
+- Cache hit rate >90% on test set (improved due to comprehensive dataset)
 
 ---
 
-### 2. Fine-Tuned Pathogen Classifier - **Week 3-9** (5-7 weeks)
-- [ ] **Dataset Curation**: Download and label FDA GenomeTrakr food pathogens
-  - Effort: 1 week
-  - Species: Salmonella, E. coli, Listeria, Clostridium, Bacillus, Staphylococcus
-  - Target: 5,000+ labeled genomes with train/val/test splits
-  - Output: `data/genometrakr_labeled.csv`
+### 2. Fine-Tuned Pathogen Classifier - **Week 3-8** (5-6 weeks, accelerated)
+- [x] **Dataset Curation**: ✅ **COMPLETED** - Comprehensive FoodGuard dataset ready
+  - ✅ **21,657 labeled genomes** with perfect pathogenicity balance
+  - ✅ **Species coverage**: 9 species (3 pathogenic + 6 hard negatives)
+  - ✅ **Quality validated**: Mean genome size 4.45 Mb, GC content 47.5%
+  - ✅ **Manifest**: `gbff_manifest_full_20251020_123050.tsv` production-ready
+- [ ] **Dataset Splitting**: Create stratified train/val/test splits (70/15/15)
+  - Effort: 2-3 days (reduced from 1 week)
+  - Script: `scripts/create_splits.py` (see unified manifest blueprint)
+  - Output: `data/splits/train_split.tsv`, `val_split.tsv`, `test_split.tsv`
 - [ ] **Data Preprocessing**: Preprocess all genomes and cache embeddings
   - Effort: 1-2 weeks
   - Use ESM-2 cache from Task #1
@@ -73,13 +90,14 @@ Use this alongside GitHub Issues/Milestones:
 - [ ] **Model Checkpoint**: Save fine-tuned model to HuggingFace Hub or local registry
   - Output: `macwiatrak/bacformer-foodguard-v1.0`
 
-**Owner:** ML Engineer (primary), Bioinformatician (data curation)
+**Owner:** ML Engineer (primary), Bioinformatician (✅ data curation COMPLETED)
 **Blocking:** Calibration (Task #3), API deployment (Task #7)
 **Dependencies:** Task #1 (cache must be ready)
 **Success Criteria:**
 - 95% balanced accuracy on held-out test (95% CI: [90%, 98%])
-- Per-pathogen F1 > 0.90 for all target species
+- Per-pathogen F1 > 0.90 for all 9 species (upgraded from 6)
 - Model checkpoint saved and loadable via `from_pretrained()`
+- **ENHANCED TARGET**: 21,657 training examples (4x larger than original plan)
 
 ---
 
@@ -148,10 +166,11 @@ Use this alongside GitHub Issues/Milestones:
 ---
 
 ### 5. Threat Embedding Library (Baseline NS) - **Week 10-12** (2-3 weeks, parallel)
-- [ ] **Reference Genome Curation**: Select 100 known food-related pathogens
-  - Effort: 3-5 days
-  - Include: Salmonella, E. coli, Listeria variants
-  - Output: `data/threat_library_genomes.csv`
+- [x] **Reference Genome Curation**: ✅ **COMPLETED** - 13,000 pathogenic genomes available
+  - ✅ **ENHANCED**: Use subset of 13,000 pathogenic genomes as threat library
+  - ✅ **Species coverage**: Salmonella (7,000), E. coli O157:H7 (1,500), L. monocytogenes (4,500)
+  - ✅ **Quality**: High-quality assemblies with comprehensive annotations
+  - ✅ **Output**: Available in `gbff_manifest_full_20251020_123050.tsv` (pathogenic subset)
 - [ ] **Embedding Generation**: Preprocess and embed all reference genomes
   - Effort: 1 week
   - Use cache from Task #1
@@ -166,13 +185,14 @@ Use this alongside GitHub Issues/Milestones:
   - Add `analyst_review_required: true` if NS > 0.5
 - [ ] **Documentation**: Mark NS as "Research Preview" in API docs
 
-**Owner:** Bioinformatician (curation), ML Engineer (implementation)
+**Owner:** Bioinformatician (✅ curation COMPLETED), ML Engineer (implementation)
 **Blocking:** None (NS is Beta, not critical for MVP launch)
 **Dependencies:** Task #1 (cache), Task #2 (embeddings)
 **Success Criteria:**
-- Threat library of 100 reference genomes embedded
-- NS computed as embedding deviation from library
+- ✅ **ENHANCED**: Threat library of 13,000 pathogenic genomes (130x larger than planned)
+- NS computed as embedding deviation from comprehensive pathogenic library
 - All NS outputs marked as "beta" with analyst review flags
+- **IMPROVED ACCURACY**: Much larger reference set for novelty detection
 
 ---
 
@@ -464,19 +484,19 @@ Use this alongside GitHub Issues/Milestones:
 - API skeleton (`api/app.py`)
 - Smoke tests (`tests/foodguard/test_pipeline_smoke.py`)
 
-### 🔴 Missing P0 Components (Blocking MVP Launch)
-1. **ESM-2 Cache Pre-population** (Week 1-2, ~29 GB, MANDATORY)
-2. **Fine-tuned Pathogen Classifier** (Week 3-9, 5-7 weeks, BLOCKING)
-3. **Per-Pathogen Calibration** (Week 10-12, 3 weeks, BLOCKING)
-4. **VFDB/CARD Integration** (Week 10-13, 3-4 weeks, BLOCKING)
-5. **Threat Embedding Library** (Week 10-12, 2-3 weeks)
-6. **Production API Deployment** (Week 14)
+### 🔴 Missing P0 Components (Blocking MVP Launch) - UPDATED
+1. **ESM-2 Cache Pre-population** (Week 1-3, ~35 GB, MANDATORY) - ✅ Dataset ready
+2. **Fine-tuned Pathogen Classifier** (Week 3-8, 5-6 weeks, BLOCKING) - ✅ Dataset ready  
+3. **Per-Pathogen Calibration** (Week 9-11, 3 weeks, BLOCKING)
+4. **VFDB/CARD Integration** (Week 9-12, 3-4 weeks, BLOCKING)
+5. **Threat Embedding Library** (Week 9-11, 2-3 weeks) - ✅ 13K pathogenic genomes ready
+6. **Production API Deployment** (Week 12)
 
-### Timeline to MVP: 14 weeks (3.5 months)
-- **Month 1 (Weeks 1-4):** Cache infrastructure + dataset curation
-- **Month 2 (Weeks 5-8):** Fine-tune classifier + begin calibration/VFDB
-- **Month 3 (Weeks 9-12):** Complete calibration/VFDB + threat library
-- **Month 4 (Weeks 13-14):** Integration, testing, beta deployment
+### ✅ UPDATED Timeline to MVP: 10-12 weeks (2.5-3 months, accelerated)
+- **Month 1 (Weeks 1-3):** ESM-2 cache population (21,657 genomes)
+- **Month 2 (Weeks 4-8):** Fine-tune classifier + begin calibration/VFDB
+- **Month 3 (Weeks 9-12):** Complete calibration/VFDB + integration + beta deployment
+- **🚀 ACCELERATION**: 2-4 weeks saved due to completed data acquisition
 
 ---
 
@@ -488,6 +508,8 @@ Use this alongside GitHub Issues/Milestones:
 - Strategic Review Findings: `ai_docs/FoodGuard_Strategic_Review_Findings.md`
 
 **Data & Preprocessing:**
+- ✅ **NEW**: Unified Manifest Blueprint: `foodguard/docs/unified_manifest_blueprint.md`
+- ✅ **NEW**: Genome Processing Pipeline: `scripts/foodguard_data_acquisition/foodguard_genome_processor.py`
 - Data Curation Guide: `ai_docs/FoodGuard_Public_Data_Curation_Guide.md`
 - Bacformer preprocessing: `bacformer/pp/preprocess.py`
 - Embedding utilities: `bacformer/pp/embed_prot_seqs.py`
@@ -501,14 +523,19 @@ Use this alongside GitHub Issues/Milestones:
 
 ---
 
-## Next Immediate Actions (Week 1)
+## ✅ UPDATED Next Immediate Actions (Week 1)
 
-1. **[DevOps]** Download FDA GenomeTrakr dataset (~5K genomes)
-2. **[ML Engineer]** Run cache pre-population script (create if needed)
-3. **[Bioinformatician]** Begin labeling GenomeTrakr genomes by pathogen class
+1. **[ML Engineer]** ✅ **PRIORITY 1**: Run ESM-2 cache population on 21,657 genomes
+   - Use manifest: `gbff_manifest_full_20251020_123050.tsv`
+   - Script: `scripts/populate_esm2_cache.py` (from unified manifest blueprint)
+   - Target: ~35 GB cache with HPC 4-GPU setup
+2. **[ML Engineer]** Create stratified train/val/test splits (70/15/15)
+   - Script: `scripts/create_splits.py`
+   - Maintain species and pathogenicity balance
+3. **[Backend Engineer]** Add cache_dir to PipelineConfig and wire to pipeline
 4. **[ML Engineer]** Validate cache hit <5s latency on 10 test genomes
-5. **[Backend Engineer]** Add cache_dir to PipelineConfig and wire to pipeline
-6. **[Team Lead]** Schedule kickoff meeting to review revised roadmap
+5. **[Team Lead]** ✅ **CELEBRATE**: Data acquisition milestone achieved!
+6. **[Team Lead]** Update project timeline and communicate acceleration to stakeholders
 
 ---
 

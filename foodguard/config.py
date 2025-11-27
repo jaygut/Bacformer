@@ -25,3 +25,7 @@ class PipelineConfig:
     use_stub: bool = False  # when True, skip model I/O and return synthetic outputs (for tests)
     return_embeddings: bool = False  # include genome embedding in responses
 
+    # ESM-2 protein embedding cache controls
+    cache_dir: Optional[str] = None  # directory containing prot_emb_*.pt cache files
+    cache_max_prot_seq_len: int = 1024  # aligns with ESM-2 token limit; adjust to match cache
+    cache_log_metrics: bool = True  # emit cache hit/miss timing to the logger

@@ -31,3 +31,14 @@ tutorials/.ipynb_checkpoints/
 
 # AI documentation
 ai_docs/
+
+# Local AI/IDE metadata
+.trae/
+.windsurf/
+
+# Local notebooks (not tracked in repo)
+notebooks/
+
+
+#Ignore windsurf AI rules
+.windsurfrules
