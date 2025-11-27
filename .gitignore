@@ -32,6 +32,10 @@ tutorials/.ipynb_checkpoints/
 # AI documentation
 ai_docs/
 
+# Claude agent configs
+.claude/agents
+AGENTS.md
+
 # Local AI/IDE metadata
 .trae/
 .windsurf/
