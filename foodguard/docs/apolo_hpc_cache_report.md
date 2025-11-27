@@ -9,10 +9,20 @@ This report documents the P0 ESM-2 cache preflight on Apolo, executed to:
 
 The preflight is part of the broader P0 “ESM-2 Cache Infrastructure — Warm, Integrate, Validate” plan: pre-populate embeddings, wire the cache into the pipeline, benchmark hit-rate/latency, and unlock fine-tuning. Apolo was evaluated as a potential execution site.
 
+## FoodGuard AI Context (why this matters)
+- FoodGuard AI (see `foodguard/README.md` and `ai_docs/*`) is a Bacformer-powered pathogen-risk system. It ingests GBFF genomes, computes ESM-2 embeddings, applies a Bacformer classifier, and fuses PS/NS/ES into a CRS with posture presets.
+- System targets: p95 latency <30s on cache hits and ≥90% cache hit rate. Cache readiness is the gating dependency for fine-tuning, calibration, evidence integration, and API deployment.
+- P0 critical path: (1) ESM-2 cache population on the 21,657-genome manifest, (2) pipeline cache integration/benchmark, (3) split generation, (4) fine-tuning. This report addresses P0.1 (cache population viability) on Apolo.
+
 ## Hardware and Cluster Context (Apolo)
 - GPU partition: `accel` only (Tesla K80, 11 GB), driver 470.42.01 (CUDA 11.4).
 - No V100/A100/T4 partitions visible (`sinfo` shows only `accel` for GPUs; AVAIL_FEATURES is null).
 - Kepler K80 + driver 470 cannot run PyTorch ≥2.x CUDA wheels that Bacformer requires.
+
+## Status Snapshot (at time of test)
+- Data: Production manifest ready (`gbff_manifest_full_20251020_123050.tsv`, 21,657 genomes).
+- Code: Pipeline, cache wrappers, and benchmark scripts implemented; TODO/roadmap aligned with `ai_docs` strategy.
+- Environment: Python 3.10 OK; GPU stack blocked by hardware/driver; CPU stack validated for smoke.
 
 ## Environment Used
 - Conda env: `FoodGuard310` (Python 3.10).
@@ -86,11 +96,12 @@ The preflight is part of the broader P0 “ESM-2 Cache Infrastructure — Warm, 
 - **Viable use:** Limited to CPU sanity checks (single-genome smoke) to validate code paths; not viable for throughput.
 
 ## Migration Plan for Production Cache
-1) **Target hardware:** Access V100/T4/A100 GPUs with driver ≥525 (cluster or cloud).
-2) **Environment on new hardware:** Python 3.10; `pip install torch==2.2.x` (cu118/cu121 matching driver); `pip install -e ".[dev]"`.
+1) **Target hardware:** Access V100/T4/A100 GPUs with driver ≥525 (cluster or cloud) to satisfy torch 2.x CUDA support and Bacformer ops.
+2) **Environment on new hardware:** Python 3.10; install torch 2.2.x CUDA wheel (cu118/cu121 matching driver); `pip install -e ".[dev]"`.
 3) **Preflight:** Repeat 2-genome preflight with `--batch-size 8`, `--max-prot-seq-len 1024`, verify cache write + timing + cache hit on rerun.
 4) **Sharded run:** Use `scripts/submit_cache_population.sh` with consistent `cache_dir`, `max-prot-seq-len=1024`, shard across available GPUs; monitor with `generate_cache_progress.py`.
 5) **Validation:** Run `scripts/pilot_benchmark_pipeline.py --limit 50 --report ...` to confirm hit-rate/latency; run integrity spot-checks on random cache files; maintain progress JSON.
+6) **Downstream readiness:** Once cache coverage ≥80%, proceed with splits, fine-tuning, calibration, and API posture settings per FoodGuard roadmap.
 
 ## Due Diligence Notes
 - Recorded all dependency pins and failure modes (torch/driver mismatch, Kepler support drop, NumPy ABI warning).
