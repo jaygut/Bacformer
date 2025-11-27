@@ -10,7 +10,7 @@ This report documents the P0 ESM-2 cache preflight on Apolo, executed to:
 The preflight is part of the broader P0 “ESM-2 Cache Infrastructure — Warm, Integrate, Validate” plan: pre-populate embeddings, wire the cache into the pipeline, benchmark hit-rate/latency, and unlock fine-tuning. Apolo was evaluated as a potential execution site.
 
 ## FoodGuard AI Context (why this matters)
-- FoodGuard AI (see `foodguard/README.md` and `ai_docs/*`) is a Bacformer-powered pathogen-risk system. It ingests GBFF genomes, computes ESM-2 embeddings, applies a Bacformer classifier, and fuses PS/NS/ES into a CRS with posture presets.
+- FoodGuard AI (see `foodguard/README.md`) is a Bacformer-powered pathogen-risk system. It ingests GBFF genomes, computes ESM-2 embeddings, applies a Bacformer classifier, and fuses PS/NS/ES into a CRS with posture presets.
 - System targets: p95 latency <30s on cache hits and ≥90% cache hit rate. Cache readiness is the gating dependency for fine-tuning, calibration, evidence integration, and API deployment.
 - P0 critical path: (1) ESM-2 cache population on the 21,657-genome manifest, (2) pipeline cache integration/benchmark, (3) split generation, (4) fine-tuning. This report addresses P0.1 (cache population viability) on Apolo.
 
