@@ -96,7 +96,8 @@ def build_projections(embs: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 def make_figure(df: pd.DataFrame) -> go.Figure:
     """Create side-by-side PCA/UMAP Plotly scatter plots."""
     fig = make_subplots(rows=1, cols=2, subplot_titles=("PCA", "UMAP"))
-    labels = df["pathogenicity"].map({1: "pathogenic", 0: "non_pathogenic"}).fillna("unknown")
+    # df["pathogenicity"] is normalized to string labels upstream
+    labels = df["pathogenicity"].fillna("unknown").astype(str)
     palette = {"pathogenic": "#d62728", "non_pathogenic": "#1f77b4", "unknown": "#7f7f7f"}
     colors = labels.map(palette).fillna("#7f7f7f")
     hover = (
