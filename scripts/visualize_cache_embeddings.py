@@ -95,11 +95,13 @@ def build_projections(embs: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 def make_figure(df: pd.DataFrame) -> go.Figure:
     """Create side-by-side PCA/UMAP Plotly scatter plots."""
     fig = make_subplots(rows=1, cols=2, subplot_titles=("PCA", "UMAP"))
-    color = df["pathogenicity"].map({1: "pathogenic", 0: "non_pathogenic"}).fillna("unknown")
+    labels = df["pathogenicity"].map({1: "pathogenic", 0: "non_pathogenic"}).fillna("unknown")
+    palette = {"pathogenic": "#d62728", "non_pathogenic": "#1f77b4", "unknown": "#7f7f7f"}
+    colors = labels.map(palette).fillna("#7f7f7f")
     hover = (
         "genome_id: " + df["genome_id"].astype(str)
         + "<br>species: " + df["species"].astype(str)
-        + "<br>pathogenicity: " + color
+        + "<br>pathogenicity: " + labels
         + "<br>proteins: " + df["proteins"].astype(str)
     )
 
@@ -108,7 +110,7 @@ def make_figure(df: pd.DataFrame) -> go.Figure:
             x=df["pca_x"],
             y=df["pca_y"],
             mode="markers",
-            marker=dict(color=color, colorscale="Viridis", showscale=False, size=6, opacity=0.8),
+            marker=dict(color=colors, size=6, opacity=0.8),
             text=hover,
             hoverinfo="text",
             name="PCA",
@@ -121,7 +123,7 @@ def make_figure(df: pd.DataFrame) -> go.Figure:
             x=df["umap_x"],
             y=df["umap_y"],
             mode="markers",
-            marker=dict(color=color, colorscale="Viridis", showscale=False, size=6, opacity=0.8),
+            marker=dict(color=colors, size=6, opacity=0.8),
             text=hover,
             hoverinfo="text",
             name="UMAP",
