@@ -149,7 +149,8 @@ def main() -> None:
     parser.add_argument("--cache-dir", required=True, help="Directory containing prot_emb_*.pt files.")
     parser.add_argument("--output", default="viz_cache_pca_umap.html", help="Output HTML file.")
     parser.add_argument("--sample", type=int, default=0, help="Number of genomes to sample (0=all).")
-    parser.add_argument("--embeddings-cache", default=None, help="Optional NPZ to store/load genome embeddings (mean pooled).")
+    parser.add_argument("--embeddings-cache", default=None, help="Optional NPZ to store/load genome embeddings (mean pooled + metadata).")
+    parser.add_argument("--force-recompute", action="store_true", help="Ignore existing embeddings cache and recompute.")
     parser.add_argument("--model-id", default="facebook/esm2_t12_35M_UR50D", help="Model ID used for cache keys.")
     parser.add_argument("--max-prot-seq-len", type=int, default=1024, help="Max protein seq length used for cache keys.")
     args = parser.parse_args()
@@ -163,12 +164,23 @@ def main() -> None:
     records = []
     embeddings = []
 
-    # Load cached genome embeddings if provided and exists
-    if embeddings_cache and embeddings_cache.exists():
+    # Load cached genome embeddings if provided and exists (and not forcing recompute)
+    if embeddings_cache and embeddings_cache.exists() and not args.force_recompute:
         data = np.load(embeddings_cache, allow_pickle=True)
         embs_arr = data["embeddings"]
-        meta = data["meta"].tolist()
-        records = meta
+        genome_ids = data["genome_id"].tolist()
+        species_arr = data["species"].tolist()
+        pathogenicity_arr = data["pathogenicity"].tolist()
+        proteins_arr = data["proteins"].tolist()
+        records = [
+            {
+                "genome_id": gid,
+                "species": sp,
+                "pathogenicity": pat,
+                "proteins": prot,
+            }
+            for gid, sp, pat, prot in zip(genome_ids, species_arr, pathogenicity_arr, proteins_arr)
+        ]
     else:
         for _, row in tqdm(df.iterrows(), total=len(df), desc="Loading cache embeddings"):
             genome_id = row.get("genome_id")
@@ -198,7 +210,14 @@ def main() -> None:
         # Save cache if requested
         if embeddings_cache:
             embeddings_cache.parent.mkdir(parents=True, exist_ok=True)
-            np.savez_compressed(embeddings_cache, embeddings=embs_arr, meta=np.array(records, dtype=object))
+            np.savez_compressed(
+                embeddings_cache,
+                embeddings=embs_arr,
+                genome_id=np.array([r["genome_id"] for r in records], dtype=object),
+                species=np.array([r["species"] for r in records], dtype=object),
+                pathogenicity=np.array([r["pathogenicity"] for r in records], dtype=object),
+                proteins=np.array([r["proteins"] for r in records], dtype=object),
+            )
 
     pca_coords, umap_coords = build_projections(embs_arr)
     out_df = pd.DataFrame(records)
