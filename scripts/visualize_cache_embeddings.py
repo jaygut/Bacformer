@@ -11,6 +11,7 @@ The script:
 
 Requirements (install into your env):
     pip install plotly scikit-learn umap-learn pandas numpy tqdm
+    # optional: joblib for faster cache of projections (not required)
 
 Usage example:
     python scripts/visualize_cache_embeddings.py \
@@ -24,7 +25,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 import numpy as np
 import pandas as pd
@@ -147,6 +148,7 @@ def main() -> None:
     parser.add_argument("--cache-dir", required=True, help="Directory containing prot_emb_*.pt files.")
     parser.add_argument("--output", default="viz_cache_pca_umap.html", help="Output HTML file.")
     parser.add_argument("--sample", type=int, default=0, help="Number of genomes to sample (0=all).")
+    parser.add_argument("--embeddings-cache", default=None, help="Optional NPZ to store/load genome embeddings (mean pooled).")
     parser.add_argument("--model-id", default="facebook/esm2_t12_35M_UR50D", help="Model ID used for cache keys.")
     parser.add_argument("--max-prot-seq-len", type=int, default=1024, help="Max protein seq length used for cache keys.")
     args = parser.parse_args()
@@ -156,35 +158,47 @@ def main() -> None:
     if args.sample and args.sample > 0 and args.sample < len(df):
         df = df.sample(n=args.sample, random_state=42)
 
+    embeddings_cache = Path(args.embeddings_cache) if args.embeddings_cache else None
     records = []
     embeddings = []
-    for _, row in tqdm(df.iterrows(), total=len(df), desc="Loading cache embeddings"):
-        genome_id = row.get("genome_id")
-        species = row.get("species")
-        path = row.get("gbff_path")
-        is_path = row.get("is_pathogenic", None)
-        emb, n_prots = load_genome_embedding(
-            gbff_path=str(path),
-            cache_dir=cache_dir,
-            model_id=args.model_id,
-            max_prot_seq_len=args.max_prot_seq_len,
-        )
-        if emb is None:
-            continue
-        embeddings.append(emb)
-        records.append(
-            {
-                "genome_id": genome_id,
-                "species": species,
-                "pathogenicity": is_path,
-                "proteins": n_prots,
-            }
-        )
 
-    if not embeddings:
-        raise SystemExit("No embeddings loaded; check manifest paths and cache_dir.")
+    # Load cached genome embeddings if provided and exists
+    if embeddings_cache and embeddings_cache.exists():
+        data = np.load(embeddings_cache, allow_pickle=True)
+        embs_arr = data["embeddings"]
+        meta = data["meta"].tolist()
+        records = meta
+    else:
+        for _, row in tqdm(df.iterrows(), total=len(df), desc="Loading cache embeddings"):
+            genome_id = row.get("genome_id")
+            species = row.get("species")
+            path = row.get("gbff_path")
+            is_path = row.get("is_pathogenic", None)
+            emb, n_prots = load_genome_embedding(
+                gbff_path=str(path),
+                cache_dir=cache_dir,
+                model_id=args.model_id,
+                max_prot_seq_len=args.max_prot_seq_len,
+            )
+            if emb is None:
+                continue
+            embeddings.append(emb)
+            records.append(
+                {
+                    "genome_id": genome_id,
+                    "species": species,
+                    "pathogenicity": is_path,
+                    "proteins": n_prots,
+                }
+            )
+        if not embeddings:
+            raise SystemExit("No embeddings loaded; check manifest paths and cache_dir.")
+        embs_arr = np.vstack(embeddings)
+        # Save cache if requested
+        if embeddings_cache:
+            embeddings_cache.parent.mkdir(parents=True, exist_ok=True)
+            np.savez_compressed(embeddings_cache, embeddings=embs_arr, meta=np.array(records, dtype=object))
 
-    embs_arr = np.vstack(embeddings)
     pca_coords, umap_coords = build_projections(embs_arr)
     out_df = pd.DataFrame(records)
     out_df["pca_x"], out_df["pca_y"] = pca_coords[:, 0], pca_coords[:, 1]
