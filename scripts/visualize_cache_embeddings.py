@@ -134,10 +134,10 @@ def make_figure(df: pd.DataFrame) -> go.Figure:
     )
     fig.update_layout(
         title="FoodGuardAI Cache Embeddings: PCA vs UMAP",
-        legend_title="Pathogenicity",
         template="plotly_white",
         height=600,
         width=1200,
+        showlegend=False,
     )
     return fig
 
