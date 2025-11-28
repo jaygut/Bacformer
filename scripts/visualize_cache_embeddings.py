@@ -146,7 +146,7 @@ def main() -> None:
     parser.add_argument("--manifest", required=True, help="Manifest TSV with genome_id, species, is_pathogenic, gbff_path.")
     parser.add_argument("--cache-dir", required=True, help="Directory containing prot_emb_*.pt files.")
     parser.add_argument("--output", default="viz_cache_pca_umap.html", help="Output HTML file.")
-    parser.add_argument("--sample", type=int, default=1000, help="Number of genomes to sample (0=all).")
+    parser.add_argument("--sample", type=int, default=0, help="Number of genomes to sample (0=all).")
     parser.add_argument("--model-id", default="facebook/esm2_t12_35M_UR50D", help="Model ID used for cache keys.")
     parser.add_argument("--max-prot-seq-len", type=int, default=1024, help="Max protein seq length used for cache keys.")
     args = parser.parse_args()
@@ -190,9 +190,28 @@ def main() -> None:
     out_df["pca_x"], out_df["pca_y"] = pca_coords[:, 0], pca_coords[:, 1]
     out_df["umap_x"], out_df["umap_y"] = umap_coords[:, 0], umap_coords[:, 1]
 
+    # Normalize pathogenicity labels (handle ints/strings)
+    def _label(x):
+        if pd.isna(x):
+            return "unknown"
+        if isinstance(x, str):
+            xs = x.strip().lower()
+            if xs in {"1", "pathogenic"}:
+                return "pathogenic"
+            if xs in {"0", "non_pathogenic", "nonpathogenic", "non-pathogenic"}:
+                return "non_pathogenic"
+            return xs
+        try:
+            return "pathogenic" if int(x) == 1 else "non_pathogenic"
+        except Exception:
+            return "unknown"
+
+    out_df["pathogenicity"] = out_df["pathogenicity"].apply(_label)
+
     fig = make_figure(out_df)
     fig.write_html(args.output, include_plotlyjs="cdn")
     print(f"Wrote {len(out_df)} points to {args.output}")
+    print(out_df["pathogenicity"].value_counts(dropna=False))
 
 
 if __name__ == "__main__":
