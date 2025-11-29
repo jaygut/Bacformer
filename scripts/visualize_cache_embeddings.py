@@ -121,7 +121,7 @@ def make_figure(df: pd.DataFrame) -> go.Figure:
             marker=dict(color=colors, size=6, opacity=0.8),
             text=hover,
             hoverinfo="text",
-            name="PCA",
+            showlegend=False,
         ),
         row=1,
         col=1,
@@ -134,7 +134,7 @@ def make_figure(df: pd.DataFrame) -> go.Figure:
             marker=dict(color=colors, size=6, opacity=0.8),
             text=hover,
             hoverinfo="text",
-            name="UMAP",
+            showlegend=False,
         ),
         row=1,
         col=2,
@@ -147,11 +147,25 @@ def make_figure(df: pd.DataFrame) -> go.Figure:
             marker=dict(color=colors, size=6, opacity=0.8),
             text=hover,
             hoverinfo="text",
-            name="t-SNE",
+            showlegend=False,
         ),
         row=1,
         col=3,
     )
+    # Add legend entries for categories only
+    for name, color in palette.items():
+        fig.add_trace(
+            go.Scatter(
+                x=[None],
+                y=[None],
+                mode="markers",
+                marker=dict(color=color, size=8),
+                name=name,
+                showlegend=True,
+            ),
+            row=1,
+            col=1,
+        )
     fig.update_layout(
         title="FoodGuardAI Genome Embeddings: PCA vs UMAP vs t-SNE",
         template="plotly_white",
