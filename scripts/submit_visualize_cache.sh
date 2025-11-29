@@ -15,9 +15,10 @@ set -euo pipefail
 MANIFEST="${MANIFEST:-/home/rsg-jcorre38/Jay_Proyects/FoodGuardAI/data/genome_statistics/gbff_manifest_full_20251020_123050_h100.tsv}"
 CACHE_DIR="${CACHE_DIR:-/home/rsg-jcorre38/Jay_Proyects/FoodGuardAI/Bacformer/.cache/esm2_h100}"
 OUTPUT="${OUTPUT:-logs/viz_cache_pca_umap.html}"
-SAMPLE="${SAMPLE:-1000}"  # set 0 to process all genomes (may be large)
+SAMPLE="${SAMPLE:-0}"  # set 0 to process all genomes
 MODEL_ID="${MODEL_ID:-facebook/esm2_t12_35M_UR50D}"
 MAX_PROT_SEQ_LEN="${MAX_PROT_SEQ_LEN:-1024}"
+EMBEDDINGS_CACHE="${EMBEDDINGS_CACHE:-/home/rsg-jcorre38/Jay_Proyects/FoodGuardAI/Bacformer/logs/genome_embeddings.npz}"
 
 # Activate environment (adjust if using a different conda module/env)
 module load miniconda3/25.5.1
@@ -35,5 +36,6 @@ python scripts/visualize_cache_embeddings.py \
   --cache-dir "$CACHE_DIR" \
   --output "$OUTPUT" \
   --sample "$SAMPLE" \
+  --embeddings-cache "$EMBEDDINGS_CACHE" \
   --model-id "$MODEL_ID" \
   --max-prot-seq-len "$MAX_PROT_SEQ_LEN"
