@@ -82,7 +82,7 @@ def load_genome_embedding(
 
 
 def build_projections(embs: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    """Compute PCA and UMAP projections (fallback to PCA if UMAP missing)."""
+    """Compute PCA, UMAP, and t-SNE projections (fallbacks as needed)."""
     pca_coords = PCA(n_components=2).fit_transform(embs)
     try:
         from umap import UMAP  # type: ignore
@@ -90,12 +90,18 @@ def build_projections(embs: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         umap_coords = UMAP(n_components=2, random_state=42, n_neighbors=15, min_dist=0.1).fit_transform(embs)
     except Exception:
         umap_coords = pca_coords.copy()
-    return pca_coords, umap_coords
+    try:
+        from sklearn.manifold import TSNE
+
+        tsne_coords = TSNE(n_components=2, random_state=42, init="pca", perplexity=min(30, len(embs) - 1)).fit_transform(embs)
+    except Exception:
+        tsne_coords = pca_coords.copy()
+    return pca_coords, umap_coords, tsne_coords
 
 
 def make_figure(df: pd.DataFrame) -> go.Figure:
-    """Create side-by-side PCA/UMAP Plotly scatter plots."""
-    fig = make_subplots(rows=1, cols=2, subplot_titles=("PCA", "UMAP"))
+    """Create three-panel PCA/UMAP/t-SNE Plotly scatter plots."""
+    fig = make_subplots(rows=1, cols=3, subplot_titles=("PCA", "UMAP", "t-SNE"))
     # df["pathogenicity"] is normalized to string labels upstream
     labels = df["pathogenicity"].fillna("unknown").astype(str)
     palette = {"pathogenic": "#d62728", "non_pathogenic": "#1f77b4", "unknown": "#7f7f7f"}
@@ -133,12 +139,26 @@ def make_figure(df: pd.DataFrame) -> go.Figure:
         row=1,
         col=2,
     )
+    fig.add_trace(
+        go.Scattergl(
+            x=df["tsne_x"],
+            y=df["tsne_y"],
+            mode="markers",
+            marker=dict(color=colors, size=6, opacity=0.8),
+            text=hover,
+            hoverinfo="text",
+            name="t-SNE",
+        ),
+        row=1,
+        col=3,
+    )
     fig.update_layout(
-        title="FoodGuardAI Cache Embeddings: PCA vs UMAP",
+        title="FoodGuardAI Genome Embeddings: PCA vs UMAP vs t-SNE",
         template="plotly_white",
         height=600,
-        width=1200,
-        showlegend=False,
+        width=1800,
+        legend_title="Pathogenicity",
+        showlegend=True,
     )
     return fig
 
@@ -219,10 +239,11 @@ def main() -> None:
                 proteins=np.array([r["proteins"] for r in records], dtype=object),
             )
 
-    pca_coords, umap_coords = build_projections(embs_arr)
+    pca_coords, umap_coords, tsne_coords = build_projections(embs_arr)
     out_df = pd.DataFrame(records)
     out_df["pca_x"], out_df["pca_y"] = pca_coords[:, 0], pca_coords[:, 1]
     out_df["umap_x"], out_df["umap_y"] = umap_coords[:, 0], umap_coords[:, 1]
+    out_df["tsne_x"], out_df["tsne_y"] = tsne_coords[:, 0], tsne_coords[:, 1]
 
     # Normalize pathogenicity labels (handle ints/strings)
     def _label(x):
