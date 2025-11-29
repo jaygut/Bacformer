@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 """
-Create an interactive two-panel dashboard (PCA vs UMAP) of cached genome embeddings.
+Create an interactive three-panel dashboard (PCA, UMAP, t-SNE) of cached genome embeddings.
 
 The script:
-- Samples genomes from the manifest
-- Reconstructs the cache key for each genome (using the same logic as population)
-- Loads cached per-protein embeddings, mean-pools to a genome embedding
-- Projects to 2D via PCA and UMAP
-- Renders an interactive Plotly HTML with hover metadata (genome_id, species, pathogenicity)
+- Samples genomes from the manifest (or uses all with --sample 0)
+- Reconstructs cache keys, loads cached per-protein embeddings, and mean-pools to a genome embedding
+- Optionally saves/loads pooled embeddings + metadata to/from an NPZ (--embeddings-cache)
+- Projects pooled embeddings to 2D via PCA, UMAP, and t-SNE
+- Renders an interactive Plotly HTML with hover metadata (genome_id, species, pathogenicity, protein count)
 
 Requirements (install into your env):
     pip install plotly scikit-learn umap-learn pandas numpy tqdm
-    # optional: joblib for faster cache of projections (not required)
 
 Usage example:
     python scripts/visualize_cache_embeddings.py \
         --manifest /path/to/gbff_manifest_full_20251020_123050_h100.tsv \
         --cache-dir /path/to/.cache/esm2_h100 \
-        --output viz_cache_pca_umap.html \
-        --sample 1000
+        --output viz_cache_pca_umap_tsne.html \
+        --sample 0 \
+        --embeddings-cache logs/genome_embeddings.npz
 """
 
 from __future__ import annotations
@@ -155,8 +155,8 @@ def make_figure(df: pd.DataFrame) -> go.Figure:
     fig.update_layout(
         title="FoodGuardAI Genome Embeddings: PCA vs UMAP vs t-SNE",
         template="plotly_white",
-        height=600,
-        width=1800,
+        height=700,
+        width=2000,
         legend_title="Pathogenicity",
         showlegend=True,
     )
