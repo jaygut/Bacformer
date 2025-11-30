@@ -1,4 +1,5 @@
 # FoodGuardAI Cache Embedding Landscape — Interim Report (Dec 2025)
+**Author:** Jay Gutierrezer (PhD) — FoodGuardAI / Bacformer
 
 ## Purpose
 Summarize the current state of the ESM-2 cache population on Apolo-3 (H100), present the pooled genome embedding landscape (PCA/UMAP/t-SNE), and connect findings to the FoodGuardAI objective: calibrated pathogen detection with fast, cache-first inference.
@@ -10,11 +11,17 @@ Summarize the current state of the ESM-2 cache population on Apolo-3 (H100), pre
 - **Viz job:** Full-sample pooling + PCA/UMAP/t-SNE completed; HTML dashboard generated (`logs/viz_cache_pca_umap.html`) using pooled genome embeddings cached to `logs/genome_embeddings.npz`.
 
 ## Figure (placeholder)
-![PCA/UMAP/t-SNE of pooled genome embeddings colored by pathogenicity](path/to/viz_cache_pca_umap.html_or_png)
+![PCA/UMAP/t-SNE of pooled genome embeddings colored by pathogenicity](path/to/viz_cache_pca_umap.png_or_html)
 
 **Figure legend:** Pooled ESM-2 genome embeddings (mean of per-protein embeddings) for cached genomes. Each point = one genome. Colors encode manifest pathogenicity (`pathogenic` red, `non_pathogenic` blue, `unknown` gray). Panels show 2D projections via PCA (left), UMAP (middle), and t-SNE (right). Hover (in HTML) reveals genome_id, species, pathogenicity, and protein count.
 
-## Rationale & Interpretation
+## What are these embeddings and why do they matter?
+- **ESM-2 protein embeddings:** ESM-2 (facebook/esm2_t12_35M_UR50D) is a protein language model that turns amino acid sequences into dense vectors capturing structural/functional/evolutionary context. We compute per-protein embeddings for every GBFF genome and cache them as `prot_emb_<key>.pt`.
+- **Genome-level pooling:** We mean-pool per-protein embeddings to get a single genome vector, preserving proteome-level signal (pathogenic vs non-pathogenic) while enabling fast reuse from cache.
+- **Bacformer linkage:** Bacformer consumes these pooled protein embeddings to produce contextualized genome representations and a pathogenicity score (PS). Strong upstream separability boosts downstream PS quality and reduces fine-tuning burden.
+- **Why this matters for FoodGuardAI:** Cache-first embeddings give sub-30s target latency on hits; clear separability before fine-tuning shows the genome-wide proteomic signal is already informative for pathogen detection.
+
+## Interpretation of the figure
 - **Goal alignment:** Fast, cache-first inference requires precomputed embeddings. Visualizing pooled embeddings assesses class separability and data quality before fine-tuning.
 - **Embedding separability:** t-SNE and UMAP show clear clustering between pathogenic vs non-pathogenic genomes, indicating the pooled ESM-2 representations already capture pathogen-specific signal; PCA shows weaker separation (expected for linear projection).
 - **Quality checks:** Uniform cluster shapes with minimal mixing suggest consistent preprocessing and cache keying. Isolated points may flag rare genomes or QC issues (worth spot-checking).
