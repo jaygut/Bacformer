@@ -6,7 +6,7 @@
 
 ## Abstract
 
-Rapid pathogen identification is critical for food safety surveillance. We evaluated whether ESM-2 protein language model embeddings capture biologically meaningful signals that discriminate pathogenic from non-pathogenic bacterial genomes. Analyzing 21,657 genomes across nine foodborne-relevant species, we demonstrate that mean-pooled genome embeddings exhibit exceptional neighborhood homophily (0.993), robust species-level clustering (silhouette = 0.555), and significant pathogenicity separation (Cohen's d = 7.52). Density-based clustering identified 34 clusters, with 97% achieving >90% pathogenicity purity. These findings establish that pre-trained protein language models can serve as effective feature extractors for embedding-based pathogen classification, with potential applications in rapid, scalable food safety monitoring.
+Rapid pathogen identification underpins effective food safety surveillance. We assessed whether embeddings from the ESM-2 protein language model encode biologically meaningful signals that separate pathogenic from non-pathogenic bacterial genomes. Analyzing 21,657 genomes across nine foodborne-relevant species, mean-pooled genome embeddings showed high neighborhood homophily (0.993), robust species-level clustering (silhouette = 0.555), and strong pathogenicity separation (Cohen's d = 7.52). Density-based clustering yielded 34 groups, 97% of which exceeded 90% pathogenicity purity. These results indicate that pre-trained protein language models can provide practical, alignment-free features for pathogen risk stratification, with potential to accelerate scalable food safety monitoring.
 
 **Keywords:** protein language model, ESM-2, foodborne pathogens, genome embedding, machine learning, food safety surveillance
 
@@ -78,11 +78,11 @@ Strict criteria (distance outlier AND noise) identified 252 genomes (1.2%) as hi
 
 ## 4. Discussion
 
-### 4.1 PLM Embeddings Enable Rapid Pathogen Classification
+### 4.1 PLM Embeddings as Rapid Features for Classification
 
-Our results demonstrate that ESM-2 genome embeddings capture signals relevant to pathogen detection without alignment. The exceptional homophily (0.993) and cluster purity (97%) suggest that embedding-based classification—using k-NN voting on pre-computed vectors—could achieve high accuracy with minimal computational overhead. This aligns with evidence that medium-sized PLMs perform well at transfer learning (Teufel et al., 2025).
+ESM-2 genome embeddings capture signals relevant to pathogen detection without alignment. The high homophily (0.993) and cluster purity (97%) suggest that embedding-based classification—e.g., k-NN on pre-computed vectors—can offer efficient performance while preserving biological structure. This is consistent with emerging evidence that medium-sized PLMs transfer effectively (Teufel et al., 2025).
 
-The species centroid heatmap reveals expected phylogenetic structure: *E. coli* variants cluster tightly (distances 13–18), while *Listeria* species show low inter-species distance (4.04), explaining observed boundary cases.
+Species-level structure follows expectations: *E. coli* variants cluster tightly (distances 13–18), while *Listeria* species show lower inter-species distance (4.04), consistent with the observed boundary cases.
 
 ### 4.2 Limitations
 
@@ -102,7 +102,7 @@ These findings have implications for next-generation surveillance architectures:
 
 **Quality control.** Low-homophily genomes in phylogenetically close species pairs warrant label verification, improving training data quality for downstream models.
 
-While alignment-based WGS remains the gold standard for outbreak investigation, embedding-based approaches could complement existing workflows by providing rapid initial risk stratification, potentially accelerating response times in food safety surveillance contexts.
+While alignment-based WGS remains essential for outbreak investigation, embedding-based approaches can complement existing workflows by providing rapid initial risk stratification and confidence cues, potentially accelerating downstream analyses.
 
 ---
 
