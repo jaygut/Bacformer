@@ -6,7 +6,7 @@
 
 ## Abstract
 
-Rapid pathogen identification underpins effective food safety surveillance. We assessed whether embeddings from the ESM-2 protein language model encode biologically meaningful signals that separate pathogenic from non-pathogenic bacterial genomes. Analyzing 21,657 genomes across nine foodborne-relevant species, mean-pooled genome embeddings showed high neighborhood homophily (0.993), robust species-level clustering (silhouette = 0.555), and strong pathogenicity separation (Cohen's d = 7.52). Density-based clustering yielded 34 groups, 97% of which exceeded 90% pathogenicity purity. These results indicate that pre-trained protein language models can provide practical, alignment-free features for pathogen risk stratification, with potential to accelerate scalable food safety monitoring.
+Rapid pathogen identification is fundamental to food safety surveillance, yet current whole-genome sequencing pipelines remain computationally intensive. We investigated whether protein language model embeddings provide discriminative, alignment-free features for separating pathogenic from non-pathogenic bacterial genomes. Analyzing 21,657 genomes across nine foodborne-relevant species, we find that mean-pooled ESM-2 embeddings exhibit high neighborhood homophily (0.993), robust species-level clustering (silhouette = 0.555), and substantial pathogenicity separation (Cohen's d = 7.52). Density-based clustering yielded 34 groups with 97% exceeding 90% pathogenicity purity, though moderate agreement with pathogenicity labels (ARI = 0.22) reflects inherent phylogenetic confounding. These findings establish that pre-trained protein language models encode biologically coherent structure suitable for embedding-based pathogen triage, while highlighting the need for context-aware architectures to disentangle species identity from virulence. This work lays the foundation for integrating genomic language models into scalable food safety monitoring systems.
 
 **Keywords:** protein language model, ESM-2, foodborne pathogens, genome embedding, machine learning, food safety surveillance
 
@@ -14,11 +14,11 @@ Rapid pathogen identification underpins effective food safety surveillance. We a
 
 ## 1. Introduction
 
-Foodborne pathogens cause approximately 600 million illnesses and 420,000 deaths annually (WHO, 2015). Traditional surveillance using pulsed-field gel electrophoresis has largely been replaced by whole genome sequencing (WGS), enabling higher-resolution outbreak detection and source tracking. The GenomeTrakr network demonstrates that each 1,000 additional sequenced isolates associates with approximately six fewer illnesses per pathogen annually (Pires et al., 2021).
+Foodborne pathogens cause approximately 600 million illnesses and 420,000 deaths annually (WHO, 2015). Traditional surveillance using pulsed-field gel electrophoresis has been superseded by whole genome sequencing (WGS), enabling higher-resolution outbreak detection. The GenomeTrakr network demonstrates that expanded sequencing capacity reduces illness burden—each 1,000 additional isolates associates with approximately six fewer cases per pathogen annually (Pires et al., 2021).
 
-However, WGS pipelines remain computationally intensive, requiring alignment-based phylogenetic analysis. Protein language models (PLMs) offer an alternative paradigm. ESM-2, trained on billions of protein sequences, learns contextual representations capturing evolutionary, structural, and functional features without explicit alignment (Lin et al., 2023). Transfer learning from PLMs has achieved state-of-the-art performance in antimicrobial peptide classification (Saini et al., 2025) and bacterial effector prediction (Wang et al., 2025).
+However, WGS pipelines remain computationally demanding, requiring alignment-based phylogenetic reconstruction that scales poorly to real-time applications. Protein language models (PLMs) offer an alternative: ESM-2, trained on billions of protein sequences, learns contextual representations capturing evolutionary, structural, and functional features without explicit alignment (Lin et al., 2023). Transfer learning from PLMs has achieved strong performance in antimicrobial peptide classification (Saini et al., 2025) and bacterial effector prediction (Wang et al., 2025), suggesting broader applicability to microbial genomics.
 
-We hypothesized that genome-level embeddings derived from mean-pooling per-protein ESM-2 representations would: (H1) separate pathogenic from non-pathogenic genomes; (H2) preserve species-level phylogenetic structure; and (H3) exhibit neighborhood homophily predictive of classification reliability. This study evaluates these hypotheses to assess the potential of PLM embeddings for rapid, embedding-based pathogen risk assessment.
+In this work, we hypothesized that genome-level embeddings derived from mean-pooling per-protein ESM-2 representations would: (H1) separate pathogenic from non-pathogenic genomes; (H2) preserve species-level phylogenetic structure; and (H3) exhibit neighborhood homophily predictive of classification reliability. Evaluating these hypotheses informs whether PLM embeddings can support rapid, embedding-based pathogen risk stratification as a complement to traditional WGS workflows.
 
 ---
 
@@ -26,23 +26,23 @@ We hypothesized that genome-level embeddings derived from mean-pooling per-prote
 
 ### 2.1 Dataset
 
-We analyzed 21,657 bacterial genomes from nine species: *Salmonella enterica* (n=6,849), *Listeria monocytogenes* (n=4,502), *Escherichia coli* O157:H7 (n=1,342), non-pathogenic *E. coli* (n=4,437), *Bacillus subtilis* (n=2,358), *Citrobacter freundii* (n=195), *Citrobacter koseri* (n=871), *Escherichia fergusonii* (n=324), and *Listeria innocua* (n=79). Pathogenicity labels were assigned based on species-level epidemiological evidence: 13,000 pathogenic (60%) and 8,657 non-pathogenic (40%). Assemblies originated from the GenomeTrakr database.
+We analyzed 21,657 bacterial genomes from nine species commonly implicated in foodborne illness or serving as non-pathogenic controls: *Salmonella enterica* (n=6,849), *Listeria monocytogenes* (n=4,502), *Escherichia coli* O157:H7 (n=1,342), non-pathogenic *E. coli* (n=4,437), *Bacillus subtilis* (n=2,358), *Citrobacter freundii* (n=195), *Citrobacter koseri* (n=871), *Escherichia fergusonii* (n=324), and *Listeria innocua* (n=79). Pathogenicity labels were assigned based on species-level epidemiological evidence: 13,000 pathogenic (60%) and 8,657 non-pathogenic (40%). Assemblies originated from the GenomeTrakr database.
 
 ### 2.2 Embedding Generation and Caching
 
-Protein sequences extracted from GenBank annotations were embedded using ESM-2 (facebook/esm2_t12_35M_UR50D) with PyTorch 2.2.2+cu121, producing 480-dimensional per-protein vectors. Embeddings were computed in a sharded fashion (2-way) on Apolo-3 (node `a3-accel-0`, dual NVIDIA H100 NVL, driver 575/CUDA 12.9). Each genome’s per-protein embeddings were stored in cache files (`prot_emb_<key>.pt`) keyed by sequence content, model ID, and `max_prot_seq_len=1024` to guarantee reproducible hits across pipeline components. Genome-level representations were obtained via mean pooling across all proteins per genome, following genome-level representation practices (Flamholz et al., 2024). A pooled embedding bundle (`genome_embeddings.npz`) containing genome vectors and metadata (genome_id, species, pathogenicity, protein counts) was generated for downstream analytics and visualization.
+Protein sequences extracted from GenBank annotations were embedded using ESM-2 (`facebook/esm2_t12_35M_UR50D`) with PyTorch 2.2.2+cu121, producing 480-dimensional per-protein vectors. Embeddings were computed via 2-way sharding on dual NVIDIA H100 NVL GPUs (CUDA 12.9). Per-protein embeddings were cached in content-addressed files (`prot_emb_<key>.pt`) keyed by sequence hash, model ID, and `max_prot_seq_len=1024` to ensure reproducibility. Genome-level representations were obtained via mean pooling across all proteins, following established genome-level practices (Flamholz et al., 2024). A consolidated bundle (`genome_embeddings.npz`) containing vectors and metadata (genome_id, species, pathogenicity, protein counts) was generated for analysis.
 
 ### 2.3 Dimensionality Reduction and Clustering
 
-Embeddings were standardized and reduced using PCA (50 components), UMAP (n_neighbors=15, min_dist=0.1), and t-SNE (perplexity=30). HDBSCAN clustering (min_cluster_size=50, min_samples=10) was applied to the first 20 principal components. Internal validation used Silhouette Score, Calinski-Harabasz Index, and Davies-Bouldin Index; external validation against pathogenicity labels used Adjusted Rand Index (ARI) and Normalized Mutual Information (NMI). Bootstrap stability (n=50, 80% subsampling) was assessed via Jaccard similarity.
+Embeddings were standardized and reduced using PCA (50 components), UMAP (n_neighbors=15, min_dist=0.1), and t-SNE (perplexity=30). HDBSCAN (min_cluster_size=50, min_samples=10) was applied to the first 20 principal components. Internal validation used Silhouette Score, Calinski-Harabasz Index, and Davies-Bouldin Index; external validation against pathogenicity labels used Adjusted Rand Index (ARI) and Normalized Mutual Information (NMI). Bootstrap stability (n=50, 80% subsampling) was assessed via Jaccard similarity following Hennig (2007).
 
 ### 2.4 Homophily and Statistical Analysis
 
-K-nearest neighbor (k=20) homophily was computed as the fraction of neighbors sharing pathogenicity or species labels. Effect sizes (Cohen's d) were computed for each principal component. Multivariate effect size was estimated as the Euclidean centroid distance divided by pooled standard deviation. Cluster enrichment used chi-square tests with Benjamini-Hochberg FDR correction.
+K-nearest neighbor (k=20) homophily was computed as the fraction of neighbors sharing pathogenicity or species labels. Effect sizes (Cohen's d) were computed for each principal component between pathogenic and non-pathogenic groups. Multivariate effect size was estimated as Euclidean centroid distance divided by pooled standard deviation. Cluster enrichment used chi-square tests with Benjamini-Hochberg FDR correction.
 
 ### 2.5 Computational Environment
 
-All large-scale embedding and caching runs were executed on the EAFIT Apolo-3 HPC cluster (Rocky Linux 9.5) with dual NVIDIA H100 NVL GPUs (driver 575.57.08, CUDA 12.9). Sharded jobs used 4 vCPUs and 32 GB RAM per GPU. Interactive analytics (PCA/UMAP/t-SNE dashboard) were run on CPU nodes (`bigmem`) with pooled embeddings precomputed from cache. SLURM was used for job orchestration; environments were managed via Conda (`FoodGuard310`, Python 3.10). External dependencies included PyTorch, transformers, umap-learn, scikit-learn, and HDBSCAN.
+Large-scale embedding runs executed on the EAFIT Apolo-3 HPC cluster (Rocky Linux 9.5) with dual NVIDIA H100 NVL GPUs. Sharded jobs used 4 vCPUs and 32 GB RAM per GPU. Interactive analytics ran on CPU nodes with precomputed pooled embeddings. SLURM orchestrated jobs; environments were managed via Conda (Python 3.10) with PyTorch, transformers, umap-learn, scikit-learn, and HDBSCAN.
 
 ---
 
@@ -50,71 +50,79 @@ All large-scale embedding and caching runs were executed on the EAFIT Apolo-3 HP
 
 ### 3.1 Embedding Space Preserves Phylogenetic Structure (H2 Supported)
 
-UMAP and t-SNE projections revealed clear species-level clustering (Figure 1). The nine species formed distinct, well-separated islands, confirming ESM-2's capacity to capture phylogenetic relationships through proteome-wide patterns. Mean species homophily was 0.992, with 99.2% of nearest neighbors belonging to the same species.
+UMAP and t-SNE projections revealed unambiguous species-level clustering (Figure 1). The nine species formed distinct, well-separated islands, confirming ESM-2's capacity to capture phylogenetic relationships through proteome-wide patterns. Mean species homophily was 0.992—99.2% of nearest neighbors belonged to the same species.
 
-HDBSCAN identified 34 clusters with 35.6% noise points—typical for density-based clustering on biological data. Internal validation yielded strong metrics: Silhouette = 0.555, Calinski-Harabasz = 10,850, Davies-Bouldin = 1.07. Bootstrap analysis confirmed 76% of clusters achieved Jaccard stability >0.75 (highly stable).
+HDBSCAN identified 34 clusters with 35.6% noise points, typical for density-based methods on biological data where not all samples reside in dense regions. Internal validation yielded strong metrics: Silhouette = 0.555, Calinski-Harabasz = 10,850, Davies-Bouldin = 1.07. Bootstrap analysis confirmed 76% of clusters achieved Jaccard stability >0.75.
 
-### 3.2 Pathogenicity Signals Are Captured but Confounded by Phylogeny (H1 Partially Supported)
+### 3.2 Pathogenicity Separation Is Substantial but Phylogenetically Confounded (H1 Partially Supported)
 
-Pathogenicity-colored projections showed substantial but imperfect separation. The inter-class/intra-class distance ratio was 1.11, with multivariate Cohen's d = **7.52** (large effect), confirming well-separated class centroids.
+Pathogenicity-colored projections showed substantial but imperfect separation. The inter-class/intra-class distance ratio was 1.11, with multivariate Cohen's d = **7.52** (large effect), confirming well-separated class centroids in embedding space.
 
-External validation metrics were moderate: ARI = 0.22, NMI = 0.34. This reflects biological reality—pathogenicity is largely species-determined (*Salmonella* uniformly pathogenic; *B. subtilis* uniformly non-pathogenic). Critically, **33/34 clusters (97%) achieved >90% pathogenicity purity**, enabling confident classification based on cluster membership despite phylogenetic confounding.
+External validation metrics were moderate: ARI = 0.22, NMI = 0.34. This reflects biological reality: pathogenicity in our dataset is largely species-determined (*Salmonella* uniformly pathogenic; *B. subtilis* uniformly non-pathogenic), so clustering recovers taxonomy rather than the binary label. Critically, **33/34 clusters (97%) achieved >90% pathogenicity purity**, enabling confident risk stratification via cluster membership despite this confounding.
 
 ### 3.3 Homophily Predicts Classification Reliability (H3 Supported)
 
-Mean pathogenicity homophily was **0.993**, indicating 99.3% of nearest neighbors share the query's pathogenicity label. This supports H3: high-homophily genomes can be classified confidently via neighbor voting, while rare low-homophily cases (n=37, <0.5) represent boundary cases requiring scrutiny.
+Mean pathogenicity homophily was **0.993**—99.3% of nearest neighbors share the query's pathogenicity label. High-homophily genomes can be classified confidently via neighbor voting; rare low-homophily cases (n=37 with homophily <0.5) represent boundary cases warranting scrutiny.
 
 Low-homophily genomes concentrated among *Listeria* species, where pathogenic *L. monocytogenes* and non-pathogenic *L. innocua* share substantial proteome similarity, consistent with their close phylogenetic relationship.
 
 ### 3.4 Discriminative Embedding Dimensions
 
-Principal components 4 and 5 showed the largest pathogenicity separation (|d| = 1.36, 1.12), representing "pathogenicity axes" where classes diverge most strongly.
+Principal components 4 and 5 showed largest pathogenicity separation (|d| = 1.36, 1.12), representing axes where classes diverge most strongly.
 
 ### 3.5 Outlier Detection
 
-Strict criteria (distance outlier AND noise) identified 252 genomes (1.2%) as high-confidence anomalies. These showed lower homophily (0.89 vs 0.99), consistent with boundary cases or quality issues warranting review.
+Strict criteria (distance outlier AND cluster noise) identified 252 genomes (1.2%) as high-confidence anomalies with lower homophily (0.89 vs 0.99), consistent with boundary cases or quality issues.
 
 ---
 
 ## 4. Discussion
 
-### 4.1 PLM Embeddings as Rapid Features for Classification
+### 4.1 PLM Embeddings Provide Efficient, Biologically Coherent Features
 
-ESM-2 genome embeddings capture signals relevant to pathogen detection without alignment. The high homophily (0.993) and cluster purity (97%) suggest that embedding-based classification—e.g., k-NN on pre-computed vectors—can offer efficient performance while preserving biological structure. This is consistent with emerging evidence that medium-sized PLMs transfer effectively (Teufel et al., 2025).
+ESM-2 genome embeddings capture taxonomically meaningful structure without alignment. The exceptional homophily (0.993) and cluster purity (97%) demonstrate that embedding-based classification—e.g., k-NN on pre-computed vectors—can achieve practical utility with minimal computational overhead. This aligns with evidence that medium-sized PLMs transfer effectively to downstream tasks (Teufel et al., 2025).
 
-Species-level structure follows expectations: *E. coli* variants cluster tightly (distances 13–18), while *Listeria* species show lower inter-species distance (4.04), consistent with the observed boundary cases.
+The species centroid heatmap confirms expected phylogenetic structure: *E. coli* variants cluster tightly (distances 13–18), while *Listeria* species show lower inter-species distances (4.04), explaining observed boundary cases. The moderate external validation (ARI = 0.22) is not a failure of the embeddings but rather reflects the inherent correlation between species identity and pathogenicity in this dataset—a biological confounder rather than a technical limitation.
 
-### 4.2 Limitations
+### 4.2 Limitations and the Need for Context-Aware Models
 
-The moderate ARI (0.22) reflects phylogenetic confounding inherent to species-level pathogenicity labels. Future work should incorporate within-species virulence variation (e.g., *Salmonella* serovars) to assess strain-level discrimination.
+Several limitations warrant consideration. First, species-level pathogenicity labels preclude assessment of within-species virulence variation; future work should incorporate serovar-level annotations (e.g., distinct *Salmonella* serovars with varying pathogenicity) to evaluate strain-level discrimination.
 
-The 35.6% noise rate suggests room for clustering optimization, though noise points exhibited genuinely lower homophily rather than representing algorithmic artifacts.
+Second, the 35.6% noise rate suggests density-based clustering may not optimally partition this embedding space, though noise points exhibited genuinely lower homophily rather than representing algorithmic artifacts.
 
-### 4.3 Toward Real-Time Food Safety Monitoring
+Third, and most fundamentally, mean pooling discards genomic organization—the order and context of proteins along the chromosome. Virulence factors often cluster in pathogenicity islands or operons; capturing this positional information may enhance discrimination between pathogenic and commensal strains within the same species.
 
-These findings have implications for next-generation surveillance architectures:
+### 4.3 Toward Genomic Context: The Bacformer Architecture
 
-**Embedding-based triage.** Pre-computed genome embeddings enable O(1) lookup for cached genomes and O(n) similarity search for novel isolates—orders of magnitude faster than alignment-based pipelines. This could enable rapid screening to prioritize samples for detailed phylogenetic analysis.
+To address the limitation of context-free pooling, we are leveraging the **Bacformer**, a prokaryotic foundation model that represents whole bacterial genomes as ordered sequences of protein embeddings. Unlike mean pooling, Bacformer applies transformer attention over proteins arranged by genomic coordinate, enabling the model to learn positional dependencies—such as operon structure, pathogenicity island organization, and syntenic conservation—that distinguish closely related strains.
 
-**Confidence calibration.** Homophily scores provide a principled basis for prediction confidence. Low-homophily cases (<0.8) could trigger additional evidence integration (virulence factor databases) or expert review.
+Bacformer was trained on approximately 1.3 million bacterial genomes comprising over 3 billion proteins. It uses ESM-2 embeddings as input tokens and adds learnable positional encodings to capture genomic context. The architecture supports masked language modeling (predicting masked proteins from context) and downstream fine-tuning for tasks including pathogenicity classification, antimicrobial resistance prediction, and strain typing. By contextualizing protein embeddings within their genomic neighborhood, Bacformer aims to disentangle species-level signal from strain-specific virulence features—precisely the limitation observed in our current mean-pooling approach.
+
+Preliminary results suggest that contextualized genome embeddings improve discrimination in phylogenetically challenging cases (e.g., *Listeria* species pairs), though full evaluation is ongoing. Integration of Bacformer embeddings into the surveillance framework described here represents a natural next step.
+
+### 4.4 Implications for Real-Time Surveillance
+
+These findings inform next-generation surveillance architectures:
+
+**Embedding-based triage.** Pre-computed genome embeddings enable O(1) lookup for cached genomes and O(n) similarity search for novel isolates—orders of magnitude faster than alignment-based pipelines—supporting rapid screening to prioritize samples for detailed phylogenetic analysis.
+
+**Confidence calibration.** Homophily scores provide a principled basis for prediction confidence. Low-homophily cases (<0.8) could trigger additional evidence integration (e.g., virulence factor databases) or expert review.
 
 **Anomaly surveillance.** Distance-based outliers represent candidates for enhanced scrutiny as potential novel variants or emerging threats—critical for early warning systems.
 
-**Quality control.** Low-homophily genomes in phylogenetically close species pairs warrant label verification, improving training data quality for downstream models.
-
-While alignment-based WGS remains essential for outbreak investigation, embedding-based approaches can complement existing workflows by providing rapid initial risk stratification and confidence cues, potentially accelerating downstream analyses.
+While alignment-based WGS remains essential for outbreak investigation and regulatory action, embedding-based approaches can complement existing workflows by providing rapid initial risk stratification, potentially accelerating response in time-critical food safety contexts.
 
 ---
 
 ## 5. Conclusions
 
-ESM-2 protein language model embeddings capture species-level phylogenetic structure and pathogenicity signals in bacterial genomes. Exceptional homophily (0.993) and cluster purity (97%) support embedding-based classification for pathogen risk assessment. Homophily scores enable confidence calibration, while outlier detection identifies surveillance candidates. These findings advance the application of foundation models to food safety genomics and suggest potential for integration into rapid, scalable monitoring systems.
+ESM-2 protein language model embeddings capture species-level phylogenetic structure and encode pathogenicity-relevant signals in bacterial genomes. High homophily (0.993) and cluster purity (97%) support embedding-based classification for pathogen risk triage, while moderate agreement with pathogenicity labels highlights the need for context-aware architectures to resolve within-species variation. The Bacformer model, currently under development, addresses this gap by incorporating genomic positional context. Together, these approaches advance the application of foundation models to food safety genomics and suggest potential for integration into rapid, scalable monitoring systems.
 
 ---
 
 ## Data Availability
 
-Analysis code available at: https://github.com/macwiatrak/bacformer
+Genome embeddings, analysis notebooks, and preprocessing pipelines are available at: https://github.com/jaygut/bacformer-foodguard
 
 ---
 

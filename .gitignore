@@ -43,6 +43,10 @@ AGENTS.md
 # Local notebooks (not tracked in repo)
 notebooks/
 
+# FoodGuardAI analysis outputs
+foodguard/analysis/
+foodguard/logs/
+
 
 #Ignore windsurf AI rules
 .windsurfrules
