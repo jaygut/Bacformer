@@ -42,6 +42,8 @@ AGENTS.md
 
 # Local notebooks (not tracked in repo)
 notebooks/
+# Exception: track manuscript computational appendix
+!notebooks/foodguard_manuscript_appendix.ipynb
 
 # FoodGuardAI analysis outputs
 foodguard/analysis/
