@@ -48,6 +48,25 @@ flowchart TD
 
 ---
 
+## Manuscript & Validation Workflow
+
+This repo also tracks the manuscript-ready analysis pipeline and reproducible validation runs.
+
+- **Manuscript draft**: `foodguard/docs/manuscript_genome_embedding_analysis.md`
+- **Robustness validation notebook**: `notebooks/foodguard_simulated_drift_study.ipynb`
+  - Protein dropout, contig dropout, and contamination mixing stress tests (k=20).
+- **HPC runner**: `scripts/submit_validation_notebook.sh`
+- **Generated outputs**: `foodguard/analysis/robustness_validation_*` (CSV summaries + figure).
+
+On Apolo‑3, submit the validation notebook with cache/manifest paths:
+```bash
+sbatch --partition=bigmem --cpus-per-task=2 --mem=0 \
+  --export=ALL,MANIFEST=/path/to/gbff_manifest.tsv,CACHE_DIR=/path/to/.cache/esm2_h100,OUTPUT_DIR=/path/to/foodguard/analysis \
+  scripts/submit_validation_notebook.sh
+```
+
+---
+
 ## Installation & Setup
 
 ### Requirements

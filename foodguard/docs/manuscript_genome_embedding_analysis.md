@@ -149,6 +149,18 @@ For each subset we report kNN vote accuracy (k=20), balanced accuracy, mean homo
 these methods operationalize the framework depicted in Figure 1 and enable the geometry-aware triage signals we report
 below.
 
+### 2.8 Robustness to Proteome Incompleteness (Protein Dropout Validation)
+
+To evaluate resilience to incomplete assemblies and contamination, we run three cache-only stress tests on a balanced
+sample of 200 genomes per species (9 taxa; n=1,800). (i) **Protein dropout:** randomly retain 90%, 75%, or 50% of
+proteins. (ii) **Contig dropout:** randomly retain 90%, 75%, or 50% of contigs as a fragmentation proxy. (iii)
+**Contamination mixing:** replace 5%, 10%, or 20% of proteins with proteins sampled from a different species (0% as
+control). Each rate is repeated three times, yielding n=5,400 per rate. For each perturbed embedding we compute cosine
+similarity to the full-proteome embedding, kNN neighborhood stability (Jaccard overlap; k=20), changes in
+species/pathogenicity homophily, and outlier rate based on the reference kNN distance threshold (Q3 + 1.5×IQR). This
+analysis is CPU-feasible on Apolo‑3 using the cached `prot_emb_*.pt` files and is fully reproducible via
+`notebooks/foodguard_simulated_drift_study.ipynb`.
+
 ---
 
 ## 3. Results
@@ -309,6 +321,22 @@ captures 71.7% of errors and improves covered-set accuracy to 99.53%, while a st
 captures 87.0% of errors and yields 99.77% accuracy on the non-deferred set. This illustrates how neighborhood agreement
 can be converted into an operator-facing "defer vs decide" policy with measurable trade-offs.
 
+### 3.9 Robustness to Proteome Incompleteness
+
+Robustness validation under missingness and contamination shows a consistent pattern: global embeddings remain highly
+stable while local neighborhoods degrade, and outlier rates rise sharply under severe perturbation (Figure 8). Under
+**protein dropout**, cosine similarity remains near 1.0 even at 50% retention (median 0.999981; IQR 0.999975–0.999985),
+but kNN Jaccard drops from 0.739 (IQR 0.667–0.905) at 90% retention to 0.667 (0.481–0.739) at 75% and 0.481
+(0.333–0.600) at 50%. Outlier rate increases from a 2.6% baseline to 3.1% (90%), 4.6% (75%), and 26.4% (50%). **Contig
+dropout** is more disruptive: at 90% retention, Jaccard is 0.818 (0.481–1.000) with 7.8% outliers, falling to 0.481
+(0.143–1.000) with 21.1% outliers at 75%, and 0.143 (0.000–0.538) with 53.8% outliers at 50%, despite cosine remaining
+high (median 0.999950 at 50%). **Contamination mixing** yields a similar escalation: at 5% mixing, outliers remain near
+baseline (3.1%) with Jaccard 0.667 (0.600–0.818), but at 10% mixing outliers rise to 15.7% and Jaccard falls to 0.538
+(0.379–0.667), and at 20% mixing outliers reach 56.4% with Jaccard 0.290 (0.143–0.481). Species-stratified summaries
+show that *Listeria* and *B. subtilis* are among the most sensitive under contig dropout and contamination, whereas
+*Salmonella* and *E. coli* O157:H7 retain comparatively higher neighborhood stability. Together, these curves establish
+an actionable calibration between assembly quality/contamination and expected neighborhood drift.
+
 ---
 
 ## 4. Discussion
@@ -396,6 +424,12 @@ quality control and novelty monitoring. In operational deployments, these genome
 assembly/annotation checks, contamination screening, and drift tracking, and can trigger recalibration or retraining
 when they accumulate over time.
 
+The robustness validation (Figure 8) makes this actionable for FoodGuardAI. By jointly stress-testing protein loss,
+contig fragmentation, and cross-species mixing, it quantifies when local neighborhoods destabilize and when outlier
+rates spike, enabling calibrated "trust vs defer" rules tied to assembly quality and contamination risk. Because the
+analysis is driven by the cached per-protein embeddings, it can be rerun whenever the cache expands or when the pipeline
+ingests new taxa, providing a living calibration layer for surveillance deployment rather than a one-time benchmark.
+
 ### 4.4 Limitations
 
 Several limitations bear on both scientific interpretation and any surveillance-oriented deployment.
@@ -415,7 +449,13 @@ depends on gene calling/annotation, and unequal proteome sizes can bias a mean-p
 correlates with embedding “edge-case” signals in this dataset (e.g., Spearman ρ = 0.29 between protein count and
 k-neighbor distance, and ρ ≈ −0.20 between protein count and label homophily), and strict outliers have larger median
 protein counts than non-outliers (4,902 vs 4,403). These patterns are consistent with a mix of biological diversity and
-assembly/annotation artifacts, and motivate explicit QC and missingness stress tests.
+assembly/annotation artifacts, and motivate explicit QC and missingness stress tests. We address this directly with the
+robustness validation (Sections 2.8 and 3.9), which quantifies how incomplete or contaminated proteomes perturb
+neighborhood stability and outlier rates.
+
+These stress tests are simulated (random protein/contig removal and cross-species mixing) and therefore cannot replace
+real-world completeness/contamination measurements; they provide a principled stress benchmark but should ultimately be
+anchored to external QC tools and independent datasets.
 
 Fourth, our dataset is imbalanced (7,000 *Salmonella* vs 200 *C. freundii*; 35:1), which can bias centroid estimates,
 neighbor mixing asymmetry, and density-based clustering toward abundant taxa. Finally, our cache configuration uses a
@@ -423,9 +463,9 @@ maximum protein sequence length (`max_prot_seq_len=1024`), so very long proteins
 has not been quantified here.
 
 We view these limitations as an honest boundary of what a mean-pooled baseline can claim, and as a roadmap for the next
-iteration: robustness-to-incomplete-proteomes experiments (protein dropout), evidence integration (virulence/AMR gene
-matching), and deeper outlier validation (e.g., completeness/contamination checks) before making stronger production
-claims. More broadly, they motivate context-aware genome language models and evidence-driven pipelines as the next step.
+iteration: evidence integration (virulence/AMR gene matching), deeper outlier validation (e.g., completeness and
+contamination checks), and systematic calibration against longitudinal data before making stronger production claims.
+More broadly, they motivate context-aware genome language models and evidence-driven pipelines as the next step.
 
 ### 4.5 Future Directions
 
@@ -434,9 +474,10 @@ descriptive geometry to deployment readiness. One direction is to calibrate homo
 decision thresholds by mapping them to retrieval error rates (or downstream misclassification) under held-out splits. A
 second is to stress-test cross-taxon generalization by training on a subset of taxa and evaluating on held-out taxa,
 quantifying how much of the signal is genuinely transferable beyond taxonomy priors. Third, robustness-to-missingness
-can be probed by simulating incomplete proteomes via protein downsampling (leveraging the per-protein cache for a
-targeted subset) and measuring embedding stability and neighborhood drift. Finally, an interactive "hard-case" atlas of
-low-homophily and strict-outlier genomes—paired with nearest neighbors and
+has been implemented via protein and contig dropout plus contamination mixing using the cached per-protein embeddings;
+extending this to assembly-quality stratification and external validation datasets would further harden the pipeline.
+Finally, an interactive
+"hard-case" atlas of low-homophily and strict-outlier genomes—paired with nearest neighbors and
 metadata—would support human-in-the-loop quality control and create a concrete bridge between embedding diagnostics and
 actionable surveillance workflows.
 
@@ -465,6 +506,7 @@ repository: [https://github.com/jaygut/Bacformer/tree/main/foodguard](https://gi
 Key resources include:
 - **Embedding bundle**: `foodguard/logs/genome_embeddings.npz`
 - **Analysis notebook**: `notebooks/foodguard_cache_embedding_analysis.ipynb`
+- **Robustness validation notebook**: `notebooks/foodguard_simulated_drift_study.ipynb`
 - **Validation script**: `scripts/foodguard_local_validations.py`
 - **Figures and tables**: `foodguard/analysis/`
 
@@ -630,6 +672,16 @@ symmetric cross-species neighbor mixing (k=20), computed across all species pair
 Lower centroid distances correspond to higher mixing, supporting centroid distance as a coarse confusability prior
 (Spearman ρ = −0.65; p = 1.5×10⁻⁵). Mixing is symmetrized to reduce the effect of sampling imbalance on directional
 neighbor rates.
+
+**Figure 8.** Robustness validation under missingness and contamination.
+
+![Figure 8: Robustness validation](../analysis/hpc_runs/robustness_validation/robustness_validation_figure.png)
+
+*Figure 8 legend.* Robustness validation panels (k=20). A balanced sample of 200 genomes per species (n=1,800) is used,
+with three random repeats per rate (n=5,400 per rate). Rows correspond to protein dropout (top), contig dropout
+(middle), and contamination mixing (bottom). Columns report cosine similarity to the full embedding (median with IQR
+band), kNN neighborhood stability (Jaccard overlap), and outlier rate using the reference kNN distance threshold
+(Q3 + 1.5×IQR). Contamination mixing replaces 5%, 10%, or 20% of proteins with proteins sampled from a different species.
 
 ---
 
