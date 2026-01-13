@@ -367,7 +367,9 @@ def create_pca_figure(
             ))
 
     fig.update_layout(
-        template="plotly_white",
+        template="plotly_dark",
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(13,17,23,0.8)',
         xaxis_title=f"PC1 ({MANUSCRIPT_STATS['pca_var_pc1']:.1f}% variance)",
         yaxis_title=f"PC2 ({MANUSCRIPT_STATS['pca_var_pc2']:.1f}% variance)",
         legend=dict(
@@ -375,10 +377,15 @@ def create_pca_figure(
             yanchor="bottom",
             y=-0.3,
             xanchor="center",
-            x=0.5
+            x=0.5,
+            bgcolor='rgba(0,0,0,0)',
+            font=dict(color='#8b949e')
         ),
         margin=dict(l=60, r=20, t=40, b=100),
         height=500,
+        xaxis=dict(gridcolor='#30363d', zerolinecolor='#30363d'),
+        yaxis=dict(gridcolor='#30363d', zerolinecolor='#30363d'),
+        font=dict(color='#f0f6fc'),
     )
 
     return fig
@@ -393,8 +400,8 @@ def create_homophily_histogram(df: pd.DataFrame, metric: str = "species") -> go.
     fig.add_trace(go.Histogram(
         x=df[col],
         nbinsx=50,
-        marker_color=COLORS["primary"],
-        opacity=0.8,
+        marker_color='#10b981',
+        opacity=0.85,
         name="All Genomes"
     ))
 
@@ -407,12 +414,17 @@ def create_homophily_histogram(df: pd.DataFrame, metric: str = "species") -> go.
                   annotation_text=f"Mean: {mean_val:.4f}")
 
     fig.update_layout(
-        template="plotly_white",
+        template="plotly_dark",
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(13,17,23,0.8)',
         xaxis_title=f"{metric.title()} Homophily (k=20)",
         yaxis_title="Count",
         showlegend=False,
         height=350,
         margin=dict(l=60, r=20, t=40, b=60),
+        xaxis=dict(gridcolor='#30363d', zerolinecolor='#30363d'),
+        yaxis=dict(gridcolor='#30363d', zerolinecolor='#30363d'),
+        font=dict(color='#f0f6fc'),
     )
 
     return fig
@@ -434,11 +446,16 @@ def create_species_distribution_chart(df: pd.DataFrame) -> go.Figure:
     ))
 
     fig.update_layout(
-        template="plotly_white",
+        template="plotly_dark",
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(13,17,23,0.8)',
         xaxis_title="Number of Genomes",
         yaxis_title="",
         height=400,
         margin=dict(l=150, r=80, t=20, b=60),
+        xaxis=dict(gridcolor='#30363d', zerolinecolor='#30363d'),
+        yaxis=dict(gridcolor='#30363d', zerolinecolor='#30363d'),
+        font=dict(color='#f0f6fc'),
     )
 
     return fig
@@ -475,6 +492,7 @@ def create_risk_gauge(crs: float, risk_level: str) -> go.Figure:
         height=280,
         margin=dict(l=30, r=30, t=50, b=30),
         paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color='#f0f6fc'),
     )
 
     return fig
@@ -495,25 +513,30 @@ def create_component_radar(components: dict) -> go.Figure:
         r=values,
         theta=[c.replace("_", " ").title() for c in categories],
         fill="toself",
-        fillcolor=f"rgba(27, 77, 62, 0.3)",
-        line=dict(color=COLORS["primary"], width=2),
+        fillcolor='rgba(16, 185, 129, 0.25)',
+        line=dict(color='#10b981', width=2),
         name="Risk Components"
     ))
 
     fig.update_layout(
         polar=dict(
+            bgcolor='rgba(13,17,23,0.8)',
             radialaxis=dict(
                 visible=True,
                 range=[0, 1],
-                tickfont=dict(size=10)
+                tickfont=dict(size=10, color='#8b949e'),
+                gridcolor='#30363d',
             ),
             angularaxis=dict(
-                tickfont=dict(size=11)
+                tickfont=dict(size=11, color='#f0f6fc'),
+                gridcolor='#30363d',
             )
         ),
         showlegend=False,
         height=350,
         margin=dict(l=80, r=80, t=40, b=40),
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='#f0f6fc'),
     )
 
     return fig
@@ -583,7 +606,9 @@ def create_neighbor_network_viz(
     ))
 
     fig.update_layout(
-        template="plotly_white",
+        template="plotly_dark",
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(13,17,23,0.8)',
         xaxis_title="PC1",
         yaxis_title="PC2",
         height=400,
@@ -592,9 +617,14 @@ def create_neighbor_network_viz(
             yanchor="bottom",
             y=-0.25,
             xanchor="center",
-            x=0.5
+            x=0.5,
+            bgcolor='rgba(0,0,0,0)',
+            font=dict(color='#8b949e')
         ),
         margin=dict(l=60, r=20, t=20, b=80),
+        xaxis=dict(gridcolor='#30363d', zerolinecolor='#30363d'),
+        yaxis=dict(gridcolor='#30363d', zerolinecolor='#30363d'),
+        font=dict(color='#f0f6fc'),
     )
 
     return fig
@@ -605,444 +635,579 @@ def create_neighbor_network_viz(
 # =============================================================================
 
 def render_header():
-    """Render the professional header."""
+    """Render the professional header with elegant dark theme."""
     st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-    /* ========================================
-       GLOBAL STYLES - Academic/Professional
-       ======================================== */
+    /* =====================================================
+       ELEGANT DARK THEME - FoodGuard AI
+       ===================================================== */
 
     :root {
-        --primary-dark: #1B4D3E;
-        --primary-medium: #2E7D5A;
-        --primary-light: #4CAF50;
-        --accent-gold: #C9A227;
-        --danger: #C62828;
-        --warning: #E65100;
-        --success: #2E7D32;
-        --neutral-900: #1a1a2e;
-        --neutral-800: #16213e;
-        --neutral-700: #2d3748;
-        --neutral-600: #4a5568;
-        --neutral-500: #718096;
-        --neutral-400: #a0aec0;
-        --neutral-300: #cbd5e0;
-        --neutral-200: #e2e8f0;
-        --neutral-100: #f7fafc;
-        --neutral-50: #ffffff;
+        /* Dark backgrounds */
+        --bg-primary: #0d1117;
+        --bg-secondary: #161b22;
+        --bg-tertiary: #21262d;
+        --bg-card: #1c2128;
+        --bg-elevated: #252b33;
+
+        /* Accent colors */
+        --accent-emerald: #10b981;
+        --accent-emerald-dim: #059669;
+        --accent-emerald-glow: rgba(16, 185, 129, 0.15);
+        --accent-teal: #14b8a6;
+        --accent-cyan: #22d3ee;
+        --accent-gold: #f59e0b;
+
+        /* Status colors */
+        --status-danger: #ef4444;
+        --status-danger-dim: #dc2626;
+        --status-warning: #f97316;
+        --status-success: #22c55e;
+
+        /* Text colors */
+        --text-primary: #f0f6fc;
+        --text-secondary: #8b949e;
+        --text-muted: #6e7681;
+        --text-accent: #58a6ff;
+
+        /* Borders */
+        --border-default: #30363d;
+        --border-muted: #21262d;
+        --border-accent: rgba(16, 185, 129, 0.4);
+
+        /* Shadows */
+        --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+        --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+        --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+        --shadow-glow: 0 0 20px rgba(16, 185, 129, 0.2);
     }
 
-    /* Main container adjustments */
+    /* =====================================================
+       GLOBAL OVERRIDES
+       ===================================================== */
+
+    .stApp {
+        background: var(--bg-primary) !important;
+    }
+
     .main .block-container {
-        padding-top: 1rem;
-        max-width: 1200px;
+        padding: 1rem 2rem 2rem 2rem;
+        max-width: 1400px;
     }
 
-    /* ========================================
-       HEADER - Professional Banner
-       ======================================== */
+    /* All text default to light */
+    .stApp, .stApp p, .stApp span, .stApp label, .stApp div {
+        color: var(--text-primary) !important;
+    }
+
+    /* =====================================================
+       HEADER - Sleek Banner
+       ===================================================== */
 
     .main-header {
-        background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-medium) 50%, #3d8b6e 100%);
-        color: white;
-        padding: 1.75rem 2rem;
-        border-radius: 8px;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 4px 15px rgba(27, 77, 62, 0.3);
-        border-bottom: 3px solid var(--accent-gold);
+        background: linear-gradient(135deg, #064e3b 0%, #065f46 40%, #047857 100%);
+        position: relative;
+        padding: 2rem 2.5rem;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        box-shadow: var(--shadow-lg), var(--shadow-glow);
+        overflow: hidden;
+    }
+
+    .main-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 40%;
+        height: 100%;
+        background: linear-gradient(135deg, transparent 0%, rgba(16, 185, 129, 0.1) 100%);
+        pointer-events: none;
+    }
+
+    .main-header::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent-emerald), var(--accent-teal), var(--accent-cyan));
     }
 
     .main-title {
-        font-family: 'Source Sans Pro', -apple-system, sans-serif;
-        font-size: 1.85rem;
+        font-family: 'Inter', -apple-system, sans-serif;
+        font-size: 2rem;
         font-weight: 700;
+        color: white !important;
         margin: 0;
-        letter-spacing: -0.3px;
+        letter-spacing: -0.5px;
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.75rem;
+        position: relative;
+        z-index: 1;
     }
 
     .main-subtitle {
-        font-family: 'Source Sans Pro', sans-serif;
-        font-size: 0.95rem;
+        font-family: 'Inter', sans-serif;
+        font-size: 1rem;
         font-weight: 400;
-        opacity: 0.92;
-        margin-top: 0.4rem;
-        letter-spacing: 0.2px;
+        color: rgba(255,255,255,0.85) !important;
+        margin-top: 0.5rem;
+        letter-spacing: 0.3px;
+        position: relative;
+        z-index: 1;
     }
 
     .header-badge {
-        display: inline-block;
-        background: rgba(255,255,255,0.15);
-        backdrop-filter: blur(4px);
-        padding: 0.3rem 0.85rem;
-        border-radius: 4px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(0,0,0,0.25);
+        backdrop-filter: blur(8px);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-family: 'JetBrains Mono', monospace;
         font-size: 0.7rem;
-        font-weight: 600;
-        margin-top: 0.75rem;
+        font-weight: 500;
+        color: var(--accent-cyan) !important;
+        margin-top: 1rem;
         letter-spacing: 0.5px;
         text-transform: uppercase;
-        border: 1px solid rgba(255,255,255,0.2);
+        border: 1px solid rgba(34, 211, 238, 0.3);
+        position: relative;
+        z-index: 1;
     }
 
-    /* ========================================
-       STAT CARDS - Clean Metrics Display
-       ======================================== */
+    /* =====================================================
+       STAT CARDS - Glassmorphism Style
+       ===================================================== */
 
     .stat-card {
-        background: linear-gradient(180deg, #ffffff 0%, #f8faf9 100%);
-        border-radius: 8px;
-        padding: 1.25rem 1rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
-        border: 1px solid #e8ece9;
+        background: linear-gradient(145deg, var(--bg-card) 0%, var(--bg-tertiary) 100%);
+        border-radius: 12px;
+        padding: 1.5rem 1.25rem;
+        border: 1px solid var(--border-default);
         text-align: center;
-        transition: all 0.2s ease;
-        border-left: 3px solid var(--primary-dark);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--accent-emerald), transparent);
+        opacity: 0;
+        transition: opacity 0.3s ease;
     }
 
     .stat-card:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(27, 77, 62, 0.12);
-        border-left-color: var(--primary-light);
+        transform: translateY(-4px);
+        border-color: var(--border-accent);
+        box-shadow: var(--shadow-md), 0 0 30px rgba(16, 185, 129, 0.1);
+    }
+
+    .stat-card:hover::before {
+        opacity: 1;
     }
 
     .stat-value {
-        font-family: 'Roboto Mono', monospace;
-        font-size: 1.65rem;
-        font-weight: 500;
-        color: var(--primary-dark);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: var(--accent-emerald) !important;
         margin: 0;
         line-height: 1.2;
     }
 
     .stat-label {
-        font-family: 'Source Sans Pro', sans-serif;
-        font-size: 0.75rem;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.7rem;
         font-weight: 600;
-        color: var(--neutral-500);
-        margin-top: 0.35rem;
+        color: var(--text-secondary) !important;
+        margin-top: 0.5rem;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 1px;
     }
 
-    /* ========================================
+    /* =====================================================
+       SECTION HEADERS - Elegant Dividers
+       ===================================================== */
+
+    .section-header {
+        font-family: 'Inter', sans-serif;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary) !important;
+        margin: 2rem 0 1.25rem 0;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--border-default);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        position: relative;
+    }
+
+    .section-header::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        width: 60px;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent-emerald), transparent);
+    }
+
+    /* =====================================================
        RISK BANNERS - Alert Displays
-       ======================================== */
+       ===================================================== */
 
     .risk-banner {
-        border-radius: 8px;
-        padding: 1.5rem 2rem;
+        border-radius: 12px;
+        padding: 1.75rem 2rem;
         text-align: center;
-        margin: 1rem 0;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        border: 1px solid rgba(255,255,255,0.1);
+        margin: 1.5rem 0;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .risk-banner::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        opacity: 0.1;
+        background: radial-gradient(ellipse at top, white 0%, transparent 70%);
     }
 
     .risk-banner-high {
-        background: linear-gradient(135deg, #C62828 0%, #B71C1C 100%);
-        color: white;
-        border-left: 4px solid #ff5252;
+        background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 50%, #b91c1c 100%);
+        border: 1px solid rgba(239, 68, 68, 0.4);
+        box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
     }
 
     .risk-banner-medium {
-        background: linear-gradient(135deg, #E65100 0%, #BF360C 100%);
-        color: white;
-        border-left: 4px solid #FF9800;
+        background: linear-gradient(135deg, #78350f 0%, #92400e 50%, #b45309 100%);
+        border: 1px solid rgba(249, 115, 22, 0.4);
+        box-shadow: 0 4px 20px rgba(249, 115, 22, 0.3);
     }
 
     .risk-banner-low {
-        background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%);
-        color: white;
-        border-left: 4px solid #69F0AE;
+        background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%);
+        border: 1px solid rgba(34, 197, 94, 0.4);
+        box-shadow: 0 4px 20px rgba(34, 197, 94, 0.3);
     }
 
     .risk-level-text {
-        font-family: 'Source Sans Pro', sans-serif;
-        font-size: 1.35rem;
+        font-family: 'Inter', sans-serif;
+        font-size: 1.5rem;
         font-weight: 700;
-        letter-spacing: 1.5px;
+        color: white !important;
+        letter-spacing: 2px;
         text-transform: uppercase;
+        position: relative;
+        z-index: 1;
     }
 
     .risk-action-text {
-        font-family: 'Source Sans Pro', sans-serif;
-        font-size: 0.85rem;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.9rem;
         font-weight: 500;
-        opacity: 0.92;
+        color: rgba(255,255,255,0.9) !important;
         margin-top: 0.5rem;
         letter-spacing: 0.3px;
+        position: relative;
+        z-index: 1;
     }
 
-    /* ========================================
-       INFO BOXES - Callouts (FIXED TEXT COLOR)
-       ======================================== */
+    /* =====================================================
+       INFO BOXES - Dark Callouts
+       ===================================================== */
 
     .info-box {
-        background: linear-gradient(135deg, #f0f7f4 0%, #e8f5e9 100%);
-        border-left: 4px solid var(--primary-dark);
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-default);
+        border-left: 3px solid var(--accent-emerald);
         padding: 1rem 1.25rem;
-        border-radius: 0 6px 6px 0;
+        border-radius: 0 10px 10px 0;
         margin: 1rem 0;
-        color: #1a1a2e !important;
-        font-family: 'Source Sans Pro', sans-serif;
+        font-family: 'Inter', sans-serif;
         font-size: 0.9rem;
-        line-height: 1.6;
+        line-height: 1.7;
+        color: var(--text-secondary) !important;
     }
 
     .info-box strong {
-        color: var(--primary-dark) !important;
+        color: var(--accent-emerald) !important;
         font-weight: 600;
     }
 
-    .info-box-warning {
-        background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
-        border-left-color: var(--warning);
-    }
-
-    .info-box-warning strong {
-        color: var(--warning) !important;
-    }
-
-    .info-box-danger {
-        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
-        border-left-color: var(--danger);
-    }
-
-    .info-box-danger strong {
-        color: var(--danger) !important;
-    }
-
-    /* ========================================
-       SECTION HEADERS - Academic Style
-       ======================================== */
-
-    .section-header {
-        font-family: 'Source Sans Pro', sans-serif;
-        font-size: 1.15rem;
-        font-weight: 600;
-        color: var(--primary-dark);
-        margin: 1.75rem 0 1rem 0;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid var(--neutral-200);
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .section-header::before {
-        content: '';
-        width: 4px;
-        height: 1.2rem;
-        background: var(--primary-dark);
-        border-radius: 2px;
-    }
-
-    /* ========================================
+    /* =====================================================
        METRIC PILLS - Status Badges
-       ======================================== */
+       ===================================================== */
 
     .metric-pill {
-        display: inline-block;
-        padding: 0.35rem 0.9rem;
-        border-radius: 4px;
-        font-family: 'Source Sans Pro', sans-serif;
-        font-size: 0.8rem;
+        display: inline-flex;
+        align-items: center;
+        padding: 0.4rem 1rem;
+        border-radius: 6px;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.75rem;
         font-weight: 600;
-        margin: 0.2rem;
-        letter-spacing: 0.3px;
+        margin: 0.25rem;
+        letter-spacing: 0.5px;
         text-transform: uppercase;
     }
 
     .metric-pill-success {
-        background: #e8f5e9;
-        color: #1B5E20 !important;
-        border: 1px solid #a5d6a7;
+        background: rgba(34, 197, 94, 0.15);
+        color: #4ade80 !important;
+        border: 1px solid rgba(34, 197, 94, 0.3);
     }
 
     .metric-pill-warning {
-        background: #fff3e0;
-        color: #E65100 !important;
-        border: 1px solid #ffcc80;
+        background: rgba(249, 115, 22, 0.15);
+        color: #fb923c !important;
+        border: 1px solid rgba(249, 115, 22, 0.3);
     }
 
     .metric-pill-danger {
-        background: #ffebee;
-        color: #C62828 !important;
-        border: 1px solid #ef9a9a;
+        background: rgba(239, 68, 68, 0.15);
+        color: #f87171 !important;
+        border: 1px solid rgba(239, 68, 68, 0.3);
     }
 
-    /* ========================================
-       DATA TABLES - Clean Academic Style
-       ======================================== */
-
-    .data-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-family: 'Source Sans Pro', sans-serif;
-        font-size: 0.9rem;
-        margin: 1rem 0;
-    }
-
-    .data-table th {
-        background: var(--primary-dark);
-        color: white;
-        padding: 0.75rem 1rem;
-        text-align: left;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        letter-spacing: 0.5px;
-    }
-
-    .data-table td {
-        padding: 0.65rem 1rem;
-        border-bottom: 1px solid var(--neutral-200);
-        color: var(--neutral-700) !important;
-    }
-
-    .data-table tr:hover td {
-        background: #f0f7f4;
-    }
-
-    /* ========================================
-       MANUSCRIPT CARD - For Key Findings
-       ======================================== */
-
-    .manuscript-card {
-        background: white;
-        border: 1px solid var(--neutral-200);
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin: 1rem 0;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-
-    .manuscript-card h4 {
-        font-family: 'Source Sans Pro', sans-serif;
-        font-size: 1rem;
-        font-weight: 600;
-        color: var(--primary-dark);
-        margin: 0 0 0.75rem 0;
-        padding-bottom: 0.5rem;
-        border-bottom: 1px solid var(--neutral-200);
-    }
-
-    .manuscript-card p {
-        font-family: 'Source Sans Pro', sans-serif;
-        font-size: 0.9rem;
-        color: var(--neutral-600) !important;
-        line-height: 1.7;
-        margin: 0;
-    }
-
-    /* ========================================
-       FOOTER - Professional Attribution
-       ======================================== */
+    /* =====================================================
+       FOOTER - Minimal
+       ===================================================== */
 
     .footer-text {
-        font-family: 'Source Sans Pro', sans-serif;
+        font-family: 'Inter', sans-serif;
         font-size: 0.75rem;
-        color: var(--neutral-500) !important;
+        color: var(--text-muted) !important;
         text-align: center;
-        padding: 1.5rem 0;
-        border-top: 1px solid var(--neutral-200);
-        margin-top: 2rem;
+        padding: 2rem 0 1rem 0;
+        border-top: 1px solid var(--border-muted);
+        margin-top: 3rem;
         line-height: 1.8;
     }
 
     .footer-text strong {
-        color: var(--primary-dark) !important;
+        color: var(--accent-emerald) !important;
     }
 
-    /* ========================================
-       STREAMLIT OVERRIDES
-       ======================================== */
+    /* =====================================================
+       STREAMLIT COMPONENT OVERRIDES
+       ===================================================== */
 
-    /* Hide default branding */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+    /* Hide branding */
+    #MainMenu, footer, header {visibility: hidden;}
 
-    /* Sidebar styling */
+    /* Sidebar */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #f8faf9 0%, #f0f4f2 100%);
-        border-right: 1px solid var(--neutral-200);
+        background: var(--bg-secondary) !important;
+        border-right: 1px solid var(--border-default);
     }
 
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
-        color: var(--neutral-700) !important;
+    [data-testid="stSidebar"] > div:first-child {
+        background: var(--bg-secondary) !important;
     }
 
-    /* Tab styling */
+    section[data-testid="stSidebar"] {
+        background: var(--bg-secondary) !important;
+    }
+
+    /* Sidebar text */
+    [data-testid="stSidebar"] h1,
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3,
+    [data-testid="stSidebar"] p,
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] span {
+        color: var(--text-primary) !important;
+    }
+
+    /* Radio buttons */
+    [data-testid="stSidebar"] .stRadio > label {
+        color: var(--text-primary) !important;
+    }
+
+    [data-testid="stSidebar"] .stRadio > div {
+        background: transparent !important;
+    }
+
+    /* Tabs */
     .stTabs [data-baseweb="tab-list"] {
         gap: 4px;
-        background: var(--neutral-100);
-        padding: 4px;
-        border-radius: 8px;
+        background: var(--bg-tertiary);
+        padding: 6px;
+        border-radius: 10px;
+        border: 1px solid var(--border-default);
     }
 
     .stTabs [data-baseweb="tab"] {
-        background-color: transparent;
-        border-radius: 6px;
-        padding: 8px 16px;
+        background: transparent;
+        border-radius: 8px;
+        padding: 10px 20px;
         font-weight: 500;
         font-size: 0.85rem;
-        color: var(--neutral-600);
+        color: var(--text-secondary) !important;
+        border: none;
     }
 
     .stTabs [data-baseweb="tab"]:hover {
-        background-color: var(--neutral-200);
+        background: var(--bg-elevated);
+        color: var(--text-primary) !important;
     }
 
     .stTabs [aria-selected="true"] {
-        background-color: var(--primary-dark) !important;
+        background: var(--accent-emerald) !important;
         color: white !important;
     }
 
-    /* Metric styling */
+    /* Metrics */
     [data-testid="stMetricValue"] {
-        font-family: 'Roboto Mono', monospace !important;
-        color: var(--primary-dark) !important;
+        font-family: 'JetBrains Mono', monospace !important;
+        color: var(--accent-emerald) !important;
+        font-size: 1.5rem !important;
     }
 
     [data-testid="stMetricLabel"] {
-        font-family: 'Source Sans Pro', sans-serif !important;
-        color: var(--neutral-500) !important;
+        font-family: 'Inter', sans-serif !important;
+        color: var(--text-secondary) !important;
         text-transform: uppercase;
         font-size: 0.7rem !important;
         letter-spacing: 0.5px;
     }
 
-    /* Button styling */
+    /* Buttons */
     .stButton > button {
-        font-family: 'Source Sans Pro', sans-serif;
-        font-weight: 600;
-        border-radius: 6px;
-        border: 1px solid var(--neutral-300);
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        font-size: 0.85rem;
+        border-radius: 8px;
+        background: var(--bg-tertiary) !important;
+        border: 1px solid var(--border-default) !important;
+        color: var(--text-primary) !important;
+        padding: 0.5rem 1rem;
         transition: all 0.2s ease;
     }
 
     .stButton > button:hover {
-        border-color: var(--primary-dark);
-        color: var(--primary-dark);
+        background: var(--bg-elevated) !important;
+        border-color: var(--accent-emerald) !important;
+        color: var(--accent-emerald) !important;
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
     }
 
-    /* Selectbox styling */
+    /* Selectbox */
+    [data-testid="stSelectbox"] {
+        font-family: 'Inter', sans-serif;
+    }
+
     [data-testid="stSelectbox"] label {
-        font-family: 'Source Sans Pro', sans-serif !important;
-        font-weight: 600;
-        color: var(--neutral-600) !important;
+        color: var(--text-secondary) !important;
+        font-weight: 500;
         font-size: 0.85rem;
     }
 
-    /* Dataframe styling */
+    /* Multiselect */
+    .stMultiSelect > div > div {
+        background: var(--bg-tertiary) !important;
+        border-color: var(--border-default) !important;
+    }
+
+    /* Dataframe */
     [data-testid="stDataFrame"] {
-        border: 1px solid var(--neutral-200);
-        border-radius: 8px;
+        border: 1px solid var(--border-default);
+        border-radius: 10px;
         overflow: hidden;
+    }
+
+    [data-testid="stDataFrame"] > div {
+        background: var(--bg-card) !important;
+    }
+
+    /* Expander */
+    .streamlit-expanderHeader {
+        background: var(--bg-tertiary) !important;
+        border: 1px solid var(--border-default) !important;
+        border-radius: 10px !important;
+        color: var(--text-primary) !important;
+    }
+
+    .streamlit-expanderContent {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-default) !important;
+        border-top: none !important;
+        border-radius: 0 0 10px 10px !important;
+    }
+
+    /* Plotly charts dark theme */
+    .js-plotly-plot .plotly .modebar {
+        background: var(--bg-tertiary) !important;
+    }
+
+    /* Markdown text */
+    .stMarkdown {
+        color: var(--text-primary) !important;
+    }
+
+    .stMarkdown p {
+        color: var(--text-secondary) !important;
+    }
+
+    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4 {
+        color: var(--text-primary) !important;
+    }
+
+    .stMarkdown strong {
+        color: var(--text-primary) !important;
+    }
+
+    /* Code blocks */
+    .stMarkdown code {
+        background: var(--bg-tertiary) !important;
+        color: var(--accent-cyan) !important;
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+    }
+
+    /* Warning/Info boxes from Streamlit */
+    .stAlert {
+        background: var(--bg-tertiary) !important;
+        border: 1px solid var(--border-default) !important;
+        color: var(--text-primary) !important;
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: var(--bg-secondary);
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: var(--border-default);
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--text-muted);
     }
 
     </style>
@@ -1051,11 +1216,14 @@ def render_header():
     st.markdown("""
     <div class="main-header">
         <h1 class="main-title">
-            <span style="font-size: 1.5rem;">🛡️</span>
+            <span style="font-size: 1.75rem;">🛡️</span>
             FoodGuard AI
         </h1>
         <p class="main-subtitle">Genomic Surveillance Dashboard — Whole-Proteome ESM-2 Embedding Analysis</p>
-        <span class="header-badge">GenomeTrakr • 21,657 Genomes • 9 Taxa • Public Health Defense</span>
+        <span class="header-badge">
+            <span style="color: #22d3ee;">●</span>
+            GenomeTrakr • 21,657 Genomes • 9 Taxa • Public Health Defense
+        </span>
     </div>
     """, unsafe_allow_html=True)
 
