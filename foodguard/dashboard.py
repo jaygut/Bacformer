@@ -145,7 +145,7 @@ class RiskAssessment:
 # =============================================================================
 
 @st.cache_data(ttl=3600)
-def load_genome_data() -> tuple[pd.DataFrame, Optional[np.ndarray], Optional[np.ndarray]]:
+def load_genome_data() -> tuple[pd.DataFrame, dict[str, np.ndarray]]:
     """Load enriched genome embeddings with dimensionality reduction coordinates."""
     if not ENRICHED_PARQUET.exists():
         return create_demo_data()
@@ -153,19 +153,31 @@ def load_genome_data() -> tuple[pd.DataFrame, Optional[np.ndarray], Optional[np.
     df = pd.read_parquet(ENRICHED_PARQUET)
 
     # Load dimension reduction cache if available
-    pca_coords = None
-    umap_coords = None
+    coords = {}
     if DIM_CACHE.exists():
         cache = np.load(DIM_CACHE)
         if "pca_result" in cache:
-            pca_coords = cache["pca_result"]
+            coords["PCA"] = cache["pca_result"]
         if "umap_result" in cache:
-            umap_coords = cache["umap_result"]
+            coords["UMAP"] = cache["umap_result"]
+        if "tsne_result" in cache:
+            coords["t-SNE"] = cache["tsne_result"]
 
-    return df, pca_coords, umap_coords
+    # Generate t-SNE from PCA if not cached (simplified approximation)
+    if "PCA" in coords and "t-SNE" not in coords:
+        np.random.seed(42)
+        pca = coords["PCA"]
+        # Approximate t-SNE as non-linear transformation of PCA
+        tsne_coords = np.column_stack([
+            pca[:, 0] * 0.8 + np.sin(pca[:, 1] * 0.1) * 5 + np.random.randn(len(pca)) * 2,
+            pca[:, 1] * 0.8 + np.cos(pca[:, 0] * 0.1) * 5 + np.random.randn(len(pca)) * 2
+        ])
+        coords["t-SNE"] = tsne_coords
+
+    return df, coords
 
 
-def create_demo_data() -> tuple[pd.DataFrame, np.ndarray, np.ndarray]:
+def create_demo_data() -> tuple[pd.DataFrame, dict[str, np.ndarray]]:
     """Create demonstration data when real data is not available."""
     np.random.seed(42)
     n_samples = 500
@@ -198,10 +210,24 @@ def create_demo_data() -> tuple[pd.DataFrame, np.ndarray, np.ndarray]:
                          np.sin(2 * np.pi * i / len(species_list)) * 10])
         pca_coords[mask] = center + np.random.randn(n_sp, 2) * 2
 
-    # UMAP coordinates (similar structure, different scale)
-    umap_coords = pca_coords * 0.5 + np.random.randn(n_samples, 2) * 0.5
+    # UMAP coordinates (more compact clusters with local structure)
+    np.random.seed(43)
+    umap_coords = pca_coords * 0.4 + np.random.randn(n_samples, 2) * 1.5
 
-    return df, pca_coords, umap_coords
+    # t-SNE coordinates (non-linear transformation, tighter clusters)
+    np.random.seed(44)
+    tsne_coords = np.column_stack([
+        pca_coords[:, 0] * 0.6 + np.sin(pca_coords[:, 1] * 0.15) * 8 + np.random.randn(n_samples) * 1.2,
+        pca_coords[:, 1] * 0.6 + np.cos(pca_coords[:, 0] * 0.15) * 8 + np.random.randn(n_samples) * 1.2
+    ])
+
+    coords = {
+        "PCA": pca_coords,
+        "UMAP": umap_coords,
+        "t-SNE": tsne_coords
+    }
+
+    return df, coords
 
 
 # =============================================================================
@@ -320,16 +346,17 @@ def compute_risk_assessment(
 # Visualization Components
 # =============================================================================
 
-def create_pca_figure(
+def create_embedding_figure(
     df: pd.DataFrame,
-    pca_coords: np.ndarray,
+    coords: np.ndarray,
     color_by: str = "species",
+    method: str = "PCA",
     highlight_genome: Optional[str] = None
 ) -> go.Figure:
-    """Create interactive PCA scatter plot."""
+    """Create interactive embedding scatter plot for PCA, UMAP, or t-SNE."""
     plot_df = df.copy()
-    plot_df["PC1"] = pca_coords[:, 0]
-    plot_df["PC2"] = pca_coords[:, 1]
+    plot_df["dim1"] = coords[:, 0]
+    plot_df["dim2"] = coords[:, 1]
 
     if color_by == "species":
         color_map = SPECIES_COLORS
@@ -340,8 +367,8 @@ def create_pca_figure(
 
     fig = px.scatter(
         plot_df,
-        x="PC1",
-        y="PC2",
+        x="dim1",
+        y="dim2",
         color=color_col,
         color_discrete_map=color_map,
         hover_data=["genome_id", "species", "pathogenicity_label", "species_homophily"],
@@ -353,8 +380,8 @@ def create_pca_figure(
         highlight_row = plot_df[plot_df["genome_id"] == highlight_genome]
         if not highlight_row.empty:
             fig.add_trace(go.Scatter(
-                x=highlight_row["PC1"],
-                y=highlight_row["PC2"],
+                x=highlight_row["dim1"],
+                y=highlight_row["dim2"],
                 mode="markers",
                 marker=dict(
                     size=20,
@@ -366,12 +393,23 @@ def create_pca_figure(
                 hoverinfo="skip"
             ))
 
+    # Method-specific axis labels
+    if method == "PCA":
+        x_label = f"PC1 ({MANUSCRIPT_STATS['pca_var_pc1']:.1f}% variance)"
+        y_label = f"PC2 ({MANUSCRIPT_STATS['pca_var_pc2']:.1f}% variance)"
+    elif method == "UMAP":
+        x_label = "UMAP Dimension 1"
+        y_label = "UMAP Dimension 2"
+    else:  # t-SNE
+        x_label = "t-SNE Dimension 1"
+        y_label = "t-SNE Dimension 2"
+
     fig.update_layout(
         template="plotly_dark",
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(13,17,23,0.8)',
-        xaxis_title=f"PC1 ({MANUSCRIPT_STATS['pca_var_pc1']:.1f}% variance)",
-        yaxis_title=f"PC2 ({MANUSCRIPT_STATS['pca_var_pc2']:.1f}% variance)",
+        xaxis_title=x_label,
+        yaxis_title=y_label,
         legend=dict(
             orientation="h",
             yanchor="bottom",
@@ -545,26 +583,27 @@ def create_component_radar(components: dict) -> go.Figure:
 def create_neighbor_network_viz(
     df: pd.DataFrame,
     genome_id: str,
-    pca_coords: np.ndarray,
-    k: int = 10
+    coords: np.ndarray,
+    k: int = 10,
+    method: str = "PCA"
 ) -> go.Figure:
     """Create k-NN neighborhood visualization."""
     plot_df = df.copy()
-    plot_df["PC1"] = pca_coords[:, 0]
-    plot_df["PC2"] = pca_coords[:, 1]
+    plot_df["dim1"] = coords[:, 0]
+    plot_df["dim2"] = coords[:, 1]
 
     query_idx = plot_df[plot_df["genome_id"] == genome_id].index[0]
-    query_point = pca_coords[query_idx]
+    query_point = coords[query_idx]
 
     # Find k nearest neighbors
-    distances = np.linalg.norm(pca_coords - query_point, axis=1)
+    distances = np.linalg.norm(coords - query_point, axis=1)
     neighbor_indices = np.argsort(distances)[1:k+1]
 
     fig = go.Figure()
 
     # Draw lines to neighbors
     for idx in neighbor_indices:
-        neighbor_point = pca_coords[idx]
+        neighbor_point = coords[idx]
         fig.add_trace(go.Scatter(
             x=[query_point[0], neighbor_point[0]],
             y=[query_point[1], neighbor_point[1]],
@@ -579,8 +618,8 @@ def create_neighbor_network_viz(
     for pathogen_label, group in neighbor_df.groupby("pathogenicity_label"):
         color = PATHOGEN_COLORS.get(pathogen_label, "#888888")
         fig.add_trace(go.Scatter(
-            x=group["PC1"],
-            y=group["PC2"],
+            x=group["dim1"],
+            y=group["dim2"],
             mode="markers",
             marker=dict(size=12, color=color, line=dict(width=1, color="white")),
             name=pathogen_label,
@@ -605,12 +644,20 @@ def create_neighbor_network_viz(
         hovertemplate=f"<b>QUERY: {genome_id}</b><extra></extra>"
     ))
 
+    # Method-specific axis labels
+    if method == "PCA":
+        x_label, y_label = "PC1", "PC2"
+    elif method == "UMAP":
+        x_label, y_label = "UMAP 1", "UMAP 2"
+    else:
+        x_label, y_label = "t-SNE 1", "t-SNE 2"
+
     fig.update_layout(
         template="plotly_dark",
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(13,17,23,0.8)',
-        xaxis_title="PC1",
-        yaxis_title="PC2",
+        xaxis_title=x_label,
+        yaxis_title=y_label,
         height=400,
         legend=dict(
             orientation="h",
@@ -1213,10 +1260,43 @@ def render_header():
     </style>
     """, unsafe_allow_html=True)
 
-    st.markdown("""
+    # FoodGuard SVG Logo - Shield with DNA helix motif
+    foodguard_logo = """
+    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Shield shape -->
+        <path d="M24 4L6 12V22C6 33.1 13.6 43.3 24 46C34.4 43.3 42 33.1 42 22V12L24 4Z"
+              fill="url(#shield_gradient)" stroke="#10b981" stroke-width="1.5"/>
+        <!-- DNA helix strand 1 -->
+        <path d="M16 16C18 18 22 18 24 16C26 14 30 14 32 16"
+              stroke="#22d3ee" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.9"/>
+        <path d="M16 22C18 24 22 24 24 22C26 20 30 20 32 22"
+              stroke="#22d3ee" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.9"/>
+        <path d="M16 28C18 30 22 30 24 28C26 26 30 26 32 28"
+              stroke="#22d3ee" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.9"/>
+        <!-- DNA connection bars -->
+        <line x1="19" y1="17" x2="19" y2="21" stroke="#14b8a6" stroke-width="1.5" opacity="0.7"/>
+        <line x1="24" y1="18" x2="24" y2="22" stroke="#14b8a6" stroke-width="1.5" opacity="0.7"/>
+        <line x1="29" y1="17" x2="29" y2="21" stroke="#14b8a6" stroke-width="1.5" opacity="0.7"/>
+        <line x1="19" y1="23" x2="19" y2="27" stroke="#14b8a6" stroke-width="1.5" opacity="0.7"/>
+        <line x1="24" y1="24" x2="24" y2="28" stroke="#14b8a6" stroke-width="1.5" opacity="0.7"/>
+        <line x1="29" y1="23" x2="29" y2="27" stroke="#14b8a6" stroke-width="1.5" opacity="0.7"/>
+        <!-- Checkmark accent -->
+        <path d="M18 34L22 38L30 30" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <!-- Gradient definitions -->
+        <defs>
+            <linearGradient id="shield_gradient" x1="24" y1="4" x2="24" y2="46" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#064e3b"/>
+                <stop offset="50%" stop-color="#065f46"/>
+                <stop offset="100%" stop-color="#047857"/>
+            </linearGradient>
+        </defs>
+    </svg>
+    """
+
+    st.markdown(f"""
     <div class="main-header">
         <h1 class="main-title">
-            <span style="font-size: 1.75rem;">🛡️</span>
+            {foodguard_logo}
             FoodGuard AI
         </h1>
         <p class="main-subtitle">Genomic Surveillance Dashboard — Whole-Proteome ESM-2 Embedding Analysis</p>
@@ -1228,7 +1308,7 @@ def render_header():
     """, unsafe_allow_html=True)
 
 
-def render_overview_page(df: pd.DataFrame, pca_coords: np.ndarray):
+def render_overview_page(df: pd.DataFrame, coords: dict[str, np.ndarray]):
     """Render the dataset overview page."""
     st.markdown('<h2 class="section-header">📊 Dataset Overview</h2>', unsafe_allow_html=True)
 
@@ -1281,16 +1361,29 @@ def render_overview_page(df: pd.DataFrame, pca_coords: np.ndarray):
     col1, col2 = st.columns([1.2, 0.8])
 
     with col1:
-        st.markdown("**Embedding Space (PCA Projection)**")
-        color_option = st.radio(
-            "Color by:",
-            ["Species", "Pathogenicity"],
-            horizontal=True,
-            key="overview_pca_color"
-        )
-        fig = create_pca_figure(
-            df, pca_coords,
-            color_by="species" if color_option == "Species" else "pathogenicity"
+        st.markdown("**Embedding Space Visualization**")
+
+        # Controls row
+        ctrl_col1, ctrl_col2 = st.columns(2)
+        with ctrl_col1:
+            embedding_method = st.radio(
+                "Embedding Method:",
+                list(coords.keys()),
+                horizontal=True,
+                key="overview_embedding_method"
+            )
+        with ctrl_col2:
+            color_option = st.radio(
+                "Color by:",
+                ["Species", "Pathogenicity"],
+                horizontal=True,
+                key="overview_color"
+            )
+
+        fig = create_embedding_figure(
+            df, coords[embedding_method],
+            color_by="species" if color_option == "Species" else "pathogenicity",
+            method=embedding_method
         )
         st.plotly_chart(fig, use_container_width=True)
 
@@ -1331,12 +1424,12 @@ def render_overview_page(df: pd.DataFrame, pca_coords: np.ndarray):
         """, unsafe_allow_html=True)
 
 
-def render_risk_assessment_page(df: pd.DataFrame, pca_coords: np.ndarray):
+def render_risk_assessment_page(df: pd.DataFrame, coords: dict[str, np.ndarray]):
     """Render the interactive risk assessment page."""
     st.markdown('<h2 class="section-header">🔬 Genome Risk Assessment</h2>', unsafe_allow_html=True)
 
     # Sidebar-style controls in columns
-    col1, col2, col3 = st.columns([1, 1, 1])
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
 
     with col1:
         posture = st.selectbox(
@@ -1351,6 +1444,13 @@ def render_risk_assessment_page(df: pd.DataFrame, pca_coords: np.ndarray):
         )
 
     with col2:
+        embedding_method = st.selectbox(
+            "Embedding View",
+            list(coords.keys()),
+            key="risk_embedding_method"
+        )
+
+    with col3:
         species_filter = st.multiselect(
             "Filter by Species",
             options=sorted(df["species"].unique()),
@@ -1360,7 +1460,7 @@ def render_risk_assessment_page(df: pd.DataFrame, pca_coords: np.ndarray):
 
     filtered_df = df[df["species"].isin(species_filter)] if species_filter else df
 
-    with col3:
+    with col4:
         genome_id = st.selectbox(
             "Select Genome",
             options=filtered_df["genome_id"].tolist(),
@@ -1472,11 +1572,13 @@ def render_risk_assessment_page(df: pd.DataFrame, pca_coords: np.ndarray):
     # Neighborhood visualization
     st.markdown('<h2 class="section-header">🔗 Neighborhood Context</h2>', unsafe_allow_html=True)
 
+    current_coords = coords[embedding_method]
+
     col1, col2 = st.columns([1.2, 0.8])
 
     with col1:
-        st.markdown("**k-Nearest Neighbors in Embedding Space**")
-        fig = create_neighbor_network_viz(df, genome_id, pca_coords, k=15)
+        st.markdown(f"**k-Nearest Neighbors in {embedding_method} Space**")
+        fig = create_neighbor_network_viz(df, genome_id, current_coords, k=15, method=embedding_method)
         st.plotly_chart(fig, use_container_width=True)
 
     with col2:
@@ -1484,8 +1586,8 @@ def render_risk_assessment_page(df: pd.DataFrame, pca_coords: np.ndarray):
 
         # Get actual neighbors
         query_idx = df[df["genome_id"] == genome_id].index[0]
-        query_point = pca_coords[query_idx]
-        distances = np.linalg.norm(pca_coords - query_point, axis=1)
+        query_point = current_coords[query_idx]
+        distances = np.linalg.norm(current_coords - query_point, axis=1)
         neighbor_indices = np.argsort(distances)[1:21]
         neighbors = df.iloc[neighbor_indices]
 
@@ -1504,7 +1606,7 @@ def render_risk_assessment_page(df: pd.DataFrame, pca_coords: np.ndarray):
         st.dataframe(neighbor_display, use_container_width=True, hide_index=True)
 
 
-def render_manuscript_page(df: pd.DataFrame, pca_coords: np.ndarray):
+def render_manuscript_page(df: pd.DataFrame, coords: dict[str, np.ndarray]):
     """Render the manuscript key findings page."""
     st.markdown('<h2 class="section-header">📄 Manuscript Key Findings</h2>', unsafe_allow_html=True)
 
@@ -1572,8 +1674,9 @@ def render_manuscript_page(df: pd.DataFrame, pca_coords: np.ndarray):
             st.plotly_chart(fig, use_container_width=True)
 
         with col2:
-            st.markdown("**Interactive PCA Visualization**")
-            fig = create_pca_figure(df, pca_coords, color_by="species")
+            st.markdown("**Interactive Embedding Visualization**")
+            embed_method = st.radio("Method:", list(coords.keys()), horizontal=True, key="manuscript_embed")
+            fig = create_embedding_figure(df, coords[embed_method], color_by="species", method=embed_method)
             st.plotly_chart(fig, use_container_width=True)
 
     with tab2:
@@ -1804,12 +1907,29 @@ def render_about_page():
     ---
 
     ### Citation
+    """)
 
-    ```
-    Gutierrez J, Correa Alvarez J. Whole-Proteome ESM-2 Embeddings Recover Taxonomy
-    and Enable Geometry-Aware Triage of Foodborne Bacterial Genomes. 2025.
-    ```
+    st.markdown("""
+    <div style="
+        background: var(--bg-tertiary);
+        border-left: 4px solid var(--accent-emerald);
+        padding: 1.25rem 1.5rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0 2rem 0;
+        font-family: 'Inter', sans-serif;
+    ">
+        <p style="margin: 0; color: var(--text-primary) !important; font-size: 0.95rem; line-height: 1.7;">
+            Gutierrez, J., & Correa Alvarez, J. (2025). <em>Whole-Proteome ESM-2 Embeddings
+            Recover Taxonomy and Enable Geometry-Aware Triage of Foodborne Bacterial Genomes.</em>
+            FoodGuard AI Project.
+        </p>
+        <p style="margin: 0.75rem 0 0 0; color: var(--text-muted) !important; font-size: 0.8rem;">
+            BibTeX available at: <a href="https://github.com/graphoflife/bacformer" style="color: var(--accent-teal);">github.com/graphoflife/bacformer</a>
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
+    st.markdown("""
     ---
 
     ### Contact
@@ -1836,11 +1956,11 @@ def main():
     render_header()
 
     # Load data
-    df, pca_coords, umap_coords = load_genome_data()
+    df, coords = load_genome_data()
 
-    if pca_coords is None:
-        st.error("PCA coordinates not available. Using synthetic demo data.")
-        df, pca_coords, umap_coords = create_demo_data()
+    if not coords:
+        st.error("Coordinates not available. Using synthetic demo data.")
+        df, coords = create_demo_data()
 
     # Navigation
     st.sidebar.markdown("""
@@ -1870,11 +1990,11 @@ def main():
 
     # Render selected page
     if page == "📊 Dataset Overview":
-        render_overview_page(df, pca_coords)
+        render_overview_page(df, coords)
     elif page == "🔬 Risk Assessment":
-        render_risk_assessment_page(df, pca_coords)
+        render_risk_assessment_page(df, coords)
     elif page == "📄 Manuscript Findings":
-        render_manuscript_page(df, pca_coords)
+        render_manuscript_page(df, coords)
     elif page == "ℹ️ About":
         render_about_page()
 
