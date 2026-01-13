@@ -608,191 +608,454 @@ def render_header():
     """Render the professional header."""
     st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+    /* ========================================
+       GLOBAL STYLES - Academic/Professional
+       ======================================== */
+
+    :root {
+        --primary-dark: #1B4D3E;
+        --primary-medium: #2E7D5A;
+        --primary-light: #4CAF50;
+        --accent-gold: #C9A227;
+        --danger: #C62828;
+        --warning: #E65100;
+        --success: #2E7D32;
+        --neutral-900: #1a1a2e;
+        --neutral-800: #16213e;
+        --neutral-700: #2d3748;
+        --neutral-600: #4a5568;
+        --neutral-500: #718096;
+        --neutral-400: #a0aec0;
+        --neutral-300: #cbd5e0;
+        --neutral-200: #e2e8f0;
+        --neutral-100: #f7fafc;
+        --neutral-50: #ffffff;
+    }
+
+    /* Main container adjustments */
+    .main .block-container {
+        padding-top: 1rem;
+        max-width: 1200px;
+    }
+
+    /* ========================================
+       HEADER - Professional Banner
+       ======================================== */
 
     .main-header {
-        background: linear-gradient(135deg, #1B4D3E 0%, #2E7D5A 100%);
+        background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-medium) 50%, #3d8b6e 100%);
         color: white;
-        padding: 2rem 2rem;
-        border-radius: 12px;
-        margin-bottom: 2rem;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        padding: 1.75rem 2rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 15px rgba(27, 77, 62, 0.3);
+        border-bottom: 3px solid var(--accent-gold);
     }
 
     .main-title {
-        font-family: 'Inter', sans-serif;
-        font-size: 2.2rem;
+        font-family: 'Source Sans Pro', -apple-system, sans-serif;
+        font-size: 1.85rem;
         font-weight: 700;
         margin: 0;
-        letter-spacing: -0.5px;
+        letter-spacing: -0.3px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 
     .main-subtitle {
-        font-family: 'Inter', sans-serif;
-        font-size: 1rem;
+        font-family: 'Source Sans Pro', sans-serif;
+        font-size: 0.95rem;
         font-weight: 400;
-        opacity: 0.9;
-        margin-top: 0.5rem;
+        opacity: 0.92;
+        margin-top: 0.4rem;
+        letter-spacing: 0.2px;
     }
 
-    .badge {
+    .header-badge {
         display: inline-block;
-        background: rgba(255,255,255,0.2);
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 500;
-        margin-top: 1rem;
+        background: rgba(255,255,255,0.15);
+        backdrop-filter: blur(4px);
+        padding: 0.3rem 0.85rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-top: 0.75rem;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        border: 1px solid rgba(255,255,255,0.2);
     }
+
+    /* ========================================
+       STAT CARDS - Clean Metrics Display
+       ======================================== */
 
     .stat-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-        border: 1px solid #E0E0E0;
+        background: linear-gradient(180deg, #ffffff 0%, #f8faf9 100%);
+        border-radius: 8px;
+        padding: 1.25rem 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+        border: 1px solid #e8ece9;
         text-align: center;
-        transition: transform 0.2s, box-shadow 0.2s;
+        transition: all 0.2s ease;
+        border-left: 3px solid var(--primary-dark);
     }
 
     .stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(27, 77, 62, 0.12);
+        border-left-color: var(--primary-light);
     }
 
     .stat-value {
-        font-family: 'Inter', sans-serif;
-        font-size: 2rem;
-        font-weight: 700;
-        color: #1B4D3E;
+        font-family: 'Roboto Mono', monospace;
+        font-size: 1.65rem;
+        font-weight: 500;
+        color: var(--primary-dark);
         margin: 0;
+        line-height: 1.2;
     }
 
     .stat-label {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.85rem;
-        color: #757575;
-        margin-top: 0.25rem;
+        font-family: 'Source Sans Pro', sans-serif;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--neutral-500);
+        margin-top: 0.35rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
+    /* ========================================
+       RISK BANNERS - Alert Displays
+       ======================================== */
+
     .risk-banner {
-        border-radius: 12px;
-        padding: 2rem;
+        border-radius: 8px;
+        padding: 1.5rem 2rem;
         text-align: center;
         margin: 1rem 0;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border: 1px solid rgba(255,255,255,0.1);
     }
 
     .risk-banner-high {
-        background: linear-gradient(135deg, #D32F2F 0%, #B71C1C 100%);
+        background: linear-gradient(135deg, #C62828 0%, #B71C1C 100%);
         color: white;
+        border-left: 4px solid #ff5252;
     }
 
     .risk-banner-medium {
-        background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+        background: linear-gradient(135deg, #E65100 0%, #BF360C 100%);
         color: white;
+        border-left: 4px solid #FF9800;
     }
 
     .risk-banner-low {
-        background: linear-gradient(135deg, #388E3C 0%, #2E7D32 100%);
+        background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%);
         color: white;
+        border-left: 4px solid #69F0AE;
     }
 
     .risk-level-text {
-        font-family: 'Inter', sans-serif;
-        font-size: 1.5rem;
+        font-family: 'Source Sans Pro', sans-serif;
+        font-size: 1.35rem;
         font-weight: 700;
-        letter-spacing: 1px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
     }
 
     .risk-action-text {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.9rem;
+        font-family: 'Source Sans Pro', sans-serif;
+        font-size: 0.85rem;
         font-weight: 500;
-        opacity: 0.95;
+        opacity: 0.92;
         margin-top: 0.5rem;
+        letter-spacing: 0.3px;
     }
+
+    /* ========================================
+       INFO BOXES - Callouts (FIXED TEXT COLOR)
+       ======================================== */
 
     .info-box {
-        background: #F5F5F5;
-        border-left: 4px solid #1B4D3E;
+        background: linear-gradient(135deg, #f0f7f4 0%, #e8f5e9 100%);
+        border-left: 4px solid var(--primary-dark);
         padding: 1rem 1.25rem;
-        border-radius: 0 8px 8px 0;
+        border-radius: 0 6px 6px 0;
         margin: 1rem 0;
+        color: #1a1a2e !important;
+        font-family: 'Source Sans Pro', sans-serif;
+        font-size: 0.9rem;
+        line-height: 1.6;
     }
 
-    .section-header {
-        font-family: 'Inter', sans-serif;
-        font-size: 1.25rem;
+    .info-box strong {
+        color: var(--primary-dark) !important;
         font-weight: 600;
-        color: #1B4D3E;
-        margin: 1.5rem 0 1rem 0;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #E0E0E0;
     }
+
+    .info-box-warning {
+        background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+        border-left-color: var(--warning);
+    }
+
+    .info-box-warning strong {
+        color: var(--warning) !important;
+    }
+
+    .info-box-danger {
+        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+        border-left-color: var(--danger);
+    }
+
+    .info-box-danger strong {
+        color: var(--danger) !important;
+    }
+
+    /* ========================================
+       SECTION HEADERS - Academic Style
+       ======================================== */
+
+    .section-header {
+        font-family: 'Source Sans Pro', sans-serif;
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--primary-dark);
+        margin: 1.75rem 0 1rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--neutral-200);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .section-header::before {
+        content: '';
+        width: 4px;
+        height: 1.2rem;
+        background: var(--primary-dark);
+        border-radius: 2px;
+    }
+
+    /* ========================================
+       METRIC PILLS - Status Badges
+       ======================================== */
 
     .metric-pill {
         display: inline-block;
-        padding: 0.4rem 1rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
+        padding: 0.35rem 0.9rem;
+        border-radius: 4px;
+        font-family: 'Source Sans Pro', sans-serif;
+        font-size: 0.8rem;
         font-weight: 600;
-        margin: 0.25rem;
+        margin: 0.2rem;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
     }
 
     .metric-pill-success {
-        background: #E8F5E9;
-        color: #2E7D32;
+        background: #e8f5e9;
+        color: #1B5E20 !important;
+        border: 1px solid #a5d6a7;
     }
 
     .metric-pill-warning {
-        background: #FFF3E0;
-        color: #E65100;
+        background: #fff3e0;
+        color: #E65100 !important;
+        border: 1px solid #ffcc80;
     }
 
     .metric-pill-danger {
-        background: #FFEBEE;
-        color: #C62828;
+        background: #ffebee;
+        color: #C62828 !important;
+        border: 1px solid #ef9a9a;
     }
+
+    /* ========================================
+       DATA TABLES - Clean Academic Style
+       ======================================== */
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: 'Source Sans Pro', sans-serif;
+        font-size: 0.9rem;
+        margin: 1rem 0;
+    }
+
+    .data-table th {
+        background: var(--primary-dark);
+        color: white;
+        padding: 0.75rem 1rem;
+        text-align: left;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+    }
+
+    .data-table td {
+        padding: 0.65rem 1rem;
+        border-bottom: 1px solid var(--neutral-200);
+        color: var(--neutral-700) !important;
+    }
+
+    .data-table tr:hover td {
+        background: #f0f7f4;
+    }
+
+    /* ========================================
+       MANUSCRIPT CARD - For Key Findings
+       ======================================== */
+
+    .manuscript-card {
+        background: white;
+        border: 1px solid var(--neutral-200);
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .manuscript-card h4 {
+        font-family: 'Source Sans Pro', sans-serif;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--primary-dark);
+        margin: 0 0 0.75rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--neutral-200);
+    }
+
+    .manuscript-card p {
+        font-family: 'Source Sans Pro', sans-serif;
+        font-size: 0.9rem;
+        color: var(--neutral-600) !important;
+        line-height: 1.7;
+        margin: 0;
+    }
+
+    /* ========================================
+       FOOTER - Professional Attribution
+       ======================================== */
 
     .footer-text {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.8rem;
-        color: #9E9E9E;
+        font-family: 'Source Sans Pro', sans-serif;
+        font-size: 0.75rem;
+        color: var(--neutral-500) !important;
         text-align: center;
-        padding: 2rem 0;
-        border-top: 1px solid #E0E0E0;
-        margin-top: 3rem;
+        padding: 1.5rem 0;
+        border-top: 1px solid var(--neutral-200);
+        margin-top: 2rem;
+        line-height: 1.8;
     }
 
-    /* Hide Streamlit branding */
+    .footer-text strong {
+        color: var(--primary-dark) !important;
+    }
+
+    /* ========================================
+       STREAMLIT OVERRIDES
+       ======================================== */
+
+    /* Hide default branding */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
+    header {visibility: hidden;}
 
-    /* Custom tab styling */
+    /* Sidebar styling */
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #f8faf9 0%, #f0f4f2 100%);
+        border-right: 1px solid var(--neutral-200);
+    }
+
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+        color: var(--neutral-700) !important;
+    }
+
+    /* Tab styling */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
+        gap: 4px;
+        background: var(--neutral-100);
+        padding: 4px;
+        border-radius: 8px;
     }
 
     .stTabs [data-baseweb="tab"] {
-        background-color: #F5F5F5;
-        border-radius: 8px 8px 0 0;
-        padding: 10px 20px;
+        background-color: transparent;
+        border-radius: 6px;
+        padding: 8px 16px;
         font-weight: 500;
+        font-size: 0.85rem;
+        color: var(--neutral-600);
+    }
+
+    .stTabs [data-baseweb="tab"]:hover {
+        background-color: var(--neutral-200);
     }
 
     .stTabs [aria-selected="true"] {
-        background-color: #1B4D3E !important;
+        background-color: var(--primary-dark) !important;
         color: white !important;
     }
+
+    /* Metric styling */
+    [data-testid="stMetricValue"] {
+        font-family: 'Roboto Mono', monospace !important;
+        color: var(--primary-dark) !important;
+    }
+
+    [data-testid="stMetricLabel"] {
+        font-family: 'Source Sans Pro', sans-serif !important;
+        color: var(--neutral-500) !important;
+        text-transform: uppercase;
+        font-size: 0.7rem !important;
+        letter-spacing: 0.5px;
+    }
+
+    /* Button styling */
+    .stButton > button {
+        font-family: 'Source Sans Pro', sans-serif;
+        font-weight: 600;
+        border-radius: 6px;
+        border: 1px solid var(--neutral-300);
+        transition: all 0.2s ease;
+    }
+
+    .stButton > button:hover {
+        border-color: var(--primary-dark);
+        color: var(--primary-dark);
+    }
+
+    /* Selectbox styling */
+    [data-testid="stSelectbox"] label {
+        font-family: 'Source Sans Pro', sans-serif !important;
+        font-weight: 600;
+        color: var(--neutral-600) !important;
+        font-size: 0.85rem;
+    }
+
+    /* Dataframe styling */
+    [data-testid="stDataFrame"] {
+        border: 1px solid var(--neutral-200);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
     </style>
     """, unsafe_allow_html=True)
 
     st.markdown("""
     <div class="main-header">
-        <h1 class="main-title">🛡️ FoodGuard AI</h1>
+        <h1 class="main-title">
+            <span style="font-size: 1.5rem;">🛡️</span>
+            FoodGuard AI
+        </h1>
         <p class="main-subtitle">Genomic Surveillance Dashboard — Whole-Proteome ESM-2 Embedding Analysis</p>
-        <span class="badge">GenomeTrakr • 21,657 Genomes • 9 Taxa</span>
+        <span class="header-badge">GenomeTrakr • 21,657 Genomes • 9 Taxa • Public Health Defense</span>
     </div>
     """, unsafe_allow_html=True)
 
