@@ -1260,50 +1260,14 @@ def render_header():
     </style>
     """, unsafe_allow_html=True)
 
-    # FoodGuard SVG Logo - Shield with DNA helix motif
-    foodguard_logo = """
-    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <!-- Shield shape -->
-        <path d="M24 4L6 12V22C6 33.1 13.6 43.3 24 46C34.4 43.3 42 33.1 42 22V12L24 4Z"
-              fill="url(#shield_gradient)" stroke="#10b981" stroke-width="1.5"/>
-        <!-- DNA helix strand 1 -->
-        <path d="M16 16C18 18 22 18 24 16C26 14 30 14 32 16"
-              stroke="#22d3ee" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.9"/>
-        <path d="M16 22C18 24 22 24 24 22C26 20 30 20 32 22"
-              stroke="#22d3ee" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.9"/>
-        <path d="M16 28C18 30 22 30 24 28C26 26 30 26 32 28"
-              stroke="#22d3ee" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.9"/>
-        <!-- DNA connection bars -->
-        <line x1="19" y1="17" x2="19" y2="21" stroke="#14b8a6" stroke-width="1.5" opacity="0.7"/>
-        <line x1="24" y1="18" x2="24" y2="22" stroke="#14b8a6" stroke-width="1.5" opacity="0.7"/>
-        <line x1="29" y1="17" x2="29" y2="21" stroke="#14b8a6" stroke-width="1.5" opacity="0.7"/>
-        <line x1="19" y1="23" x2="19" y2="27" stroke="#14b8a6" stroke-width="1.5" opacity="0.7"/>
-        <line x1="24" y1="24" x2="24" y2="28" stroke="#14b8a6" stroke-width="1.5" opacity="0.7"/>
-        <line x1="29" y1="23" x2="29" y2="27" stroke="#14b8a6" stroke-width="1.5" opacity="0.7"/>
-        <!-- Checkmark accent -->
-        <path d="M18 34L22 38L30 30" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-        <!-- Gradient definitions -->
-        <defs>
-            <linearGradient id="shield_gradient" x1="24" y1="4" x2="24" y2="46" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stop-color="#064e3b"/>
-                <stop offset="50%" stop-color="#065f46"/>
-                <stop offset="100%" stop-color="#047857"/>
-            </linearGradient>
-        </defs>
-    </svg>
-    """
+    # FoodGuard SVG Logo - Shield with DNA helix motif (inline, no newlines)
+    foodguard_logo = '<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="shield_gradient" x1="24" y1="4" x2="24" y2="46" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#064e3b"/><stop offset="50%" stop-color="#065f46"/><stop offset="100%" stop-color="#047857"/></linearGradient></defs><path d="M24 4L6 12V22C6 33.1 13.6 43.3 24 46C34.4 43.3 42 33.1 42 22V12L24 4Z" fill="url(#shield_gradient)" stroke="#10b981" stroke-width="1.5"/><path d="M16 16C18 18 22 18 24 16C26 14 30 14 32 16" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.9"/><path d="M16 22C18 24 22 24 24 22C26 20 30 20 32 22" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.9"/><path d="M16 28C18 30 22 30 24 28C26 26 30 26 32 28" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.9"/><line x1="19" y1="17" x2="19" y2="21" stroke="#14b8a6" stroke-width="1.5" opacity="0.7"/><line x1="24" y1="18" x2="24" y2="22" stroke="#14b8a6" stroke-width="1.5" opacity="0.7"/><line x1="29" y1="17" x2="29" y2="21" stroke="#14b8a6" stroke-width="1.5" opacity="0.7"/><line x1="19" y1="23" x2="19" y2="27" stroke="#14b8a6" stroke-width="1.5" opacity="0.7"/><line x1="24" y1="24" x2="24" y2="28" stroke="#14b8a6" stroke-width="1.5" opacity="0.7"/><line x1="29" y1="23" x2="29" y2="27" stroke="#14b8a6" stroke-width="1.5" opacity="0.7"/><path d="M18 34L22 38L30 30" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>'
 
     st.markdown(f"""
     <div class="main-header">
-        <h1 class="main-title">
-            {foodguard_logo}
-            FoodGuard AI
-        </h1>
+        <h1 class="main-title">{foodguard_logo} FoodGuard AI</h1>
         <p class="main-subtitle">Genomic Surveillance Dashboard — Whole-Proteome ESM-2 Embedding Analysis</p>
-        <span class="header-badge">
-            <span style="color: #22d3ee;">●</span>
-            GenomeTrakr • 21,657 Genomes • 9 Taxa • Public Health Defense
-        </span>
+        <span class="header-badge"><span style="color: #22d3ee;">●</span> GenomeTrakr • 21,657 Genomes • 9 Taxa • Public Health Defense</span>
     </div>
     """, unsafe_allow_html=True)
 
