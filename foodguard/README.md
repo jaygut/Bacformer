@@ -20,19 +20,19 @@ FoodGuard AI is a Bacformer-powered analysis system that assesses pathogen risk 
 
 ```mermaid
 flowchart TD
-  A[Genome Upload (.gbff/.gff)] --> B[Preprocess: protein sequences]
-  B --> C{ESM‑2 Cache}
-  C -- hit --> D[Protein means]
-  C -- miss --> E[ESM‑2 inference]
+  A["Genome Upload (.gbff/.gff)"] --> B["Preprocess: protein sequences"]
+  B --> C{"ESM-2 Cache"}
+  C -- hit --> D["Protein means"]
+  C -- miss --> E["ESM-2 inference"]
   E --> C
-  D --> F[Bacformer classifier]
-  F --> G[PS]
-  D --> H[Novelty]
-  F --> I[Evidence]
-  G --> J[Calibration]
+  D --> F["Bacformer classifier"]
+  F --> G["PS"]
+  D --> H["Novelty"]
+  F --> I["Evidence"]
+  G --> J["Calibration"]
   H --> J
   I --> J
-  J --> K[CRS + Report]
+  J --> K["CRS + Report"]
 ```
 
 - Preprocessing: `bacformer.pp.preprocess.preprocess_genome_assembly`
